@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>记账</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -23,7 +23,8 @@
   --accent:#5fb98d;--accent-soft:#1f3329;--amber:#e0a84a;--amber-soft:#33281a;--danger:#f0786b;--danger-soft:#3a1e1b;--chip:#2a2926;}
 }
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink)}
+html,body{margin:0;background:var(--bg);color:var(--ink);overscroll-behavior:none}
+html{touch-action:manipulation}
 body{font:15px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 .wrap{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(var(--bar) + 40px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
 .num{font-variant-numeric:tabular-nums}
@@ -41,7 +42,7 @@ input,select,textarea{font:inherit;color:var(--ink);font-size:16px}
 
 .card{background:var(--card);border-radius:18px;padding:18px;margin-bottom:12px;border:1px solid var(--line)}
 .label{font-size:13px;color:var(--muted)}
-.title{font-size:14px;font-weight:600;margin:0 0 12px}
+.title{font-size:16px;font-weight:600;margin:0 0 12px}
 
 .banner{border-radius:14px;padding:10px 14px;font-size:13px;margin-bottom:12px;display:none}
 .banner.show{display:block}
@@ -150,14 +151,21 @@ body.confirming .confirm{display:flex}
 .catsel .caret{font-size:11px;color:var(--muted)}
 .catsel select{position:absolute;inset:0;opacity:0;width:100%;height:100%;font-size:16px;-webkit-appearance:none;appearance:none;cursor:pointer}
 
-.cat{display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:10px;margin:9px 0}
-.cat .n{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#breakdown{display:grid;grid-template-columns:max-content 1fr max-content;align-items:center;column-gap:14px;row-gap:14px}
+.cat{display:contents;cursor:pointer}
+.cat > *{transition:opacity .2s}
+.cat.faded > *{opacity:.3}
+.cat .n{font-size:16px;white-space:nowrap}
+.cat .n em{font-style:normal;font-size:15px;color:var(--muted);margin-left:6px}
 .cat .track{height:8px;background:var(--chip);border-radius:99px;overflow:hidden}
 .cat .track i{display:block;height:100%;border-radius:99px}
-.cat .a{font-size:13px;text-align:right;min-width:88px}
-.cat .a em{font-style:normal;color:var(--muted);margin-left:4px}
-#breakdown .cat:last-child{margin-bottom:0}
-.split{height:1px;background:var(--line);margin:16px 0}
+.cat .a{font-size:15px;text-align:right}
+#breakPart{margin-bottom:30px}
+.titlerow{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 12px}
+.titlerow .title{margin:0}
+.titlerow .title span{color:var(--muted);font-weight:500}
+#showAll{font-size:15px;font-weight:600;color:var(--accent);display:none}
+#showAll.show{display:block}
 
 .day{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:12px 0 4px;border-top:1px solid var(--line)}
 .day:first-of-type{border-top:0;padding-top:0}
@@ -166,6 +174,13 @@ body.confirming .confirm{display:flex}
 .item .d{font-size:12px;color:var(--muted);white-space:nowrap}
 .item .c{font-size:14px;white-space:nowrap}
 #list .item{cursor:pointer}
+#list .day{font-size:14px}
+#list .item .c{font-size:16px}
+#list .item .note{font-size:15px}
+#list .item .m{font-size:17px}
+#list .item .m small{font-size:13px}
+#list .item .more{font-size:14px}
+#list .del{font-size:15px}
 .item .more{display:none;font-size:12px;color:var(--accent);font-weight:600;white-space:nowrap;flex:0 0 auto}
 .item.trunc .more{display:inline}
 .item.open .note{white-space:normal;overflow:visible;overflow-wrap:anywhere}
@@ -253,9 +268,8 @@ textarea.field{width:100%;min-height:70px;resize:vertical;font-size:13px;margin:
     <div id="breakPart" style="display:none">
       <p class="title">钱花在了哪</p>
       <div id="breakdown"></div>
-      <div class="split"></div>
     </div>
-    <p class="title">明细</p>
+    <div class="titlerow"><p class="title" id="listTitle">明细</p><button id="showAll">全部</button></div>
     <div id="list"></div>
   </section>
 </div>
@@ -329,7 +343,7 @@ const DEFAULT_CATS = [
 ];
 const MAX_CATS = 10;
 const WEEK = ['周日','周一','周二','周三','周四','周五','周六'];
-const APP_VERSION = '11';
+const APP_VERSION = '12';
 const AI_MODEL = 'claude-haiku-5-5';
 const BACKUP_EVERY_DAYS = 7;
 
@@ -341,6 +355,7 @@ let selCur = 'USD';
 let lastInput = 'manual';      // 最后在哪个框输入：'ai' 或 'manual'
 let pending = null;            // 等待确认的账：{ from: 'ai'|'manual', list: [...] }
 let busy = false;
+let filterCat = null;         // 明细只看哪个类别（点「钱花在了哪」里的某一行），null 是全部
 
 function defaultSettings(){
   return { budget: 0, main: 'USD', curs: ['USD','CNY'], units: {...DEFAULT_UNITS},
@@ -485,7 +500,7 @@ function commit(list){
   if (!settings.firstT) settings.firstT = now;
   saveSettings();
 }
-function openMonth(key){ viewKey = key; entries = loadMonth(key).map(e => ({...e})); render(); }
+function openMonth(key){ viewKey = key; filterCat = null; entries = loadMonth(key).map(e => ({...e})); render(); }
 
 /* ================= 渲染 ================= */
 function render(){
@@ -500,6 +515,7 @@ function render(){
   if (!d.value || d.value.slice(0,7) !== viewKey) d.value = isCurrentMonth() ? todayStr() : viewKey + '-01';
 
   renderBanners(); renderHero(); renderAIBox(); renderCurPick(); renderPreview();
+  if (filterCat && !entries.some(e => e.cat === filterCat)) filterCat = null;   // 这个类别没有记录了，就取消筛选
   renderChips(); renderWarns(); renderBreakdown(); renderList(); renderBar();
 }
 
@@ -660,9 +676,10 @@ function renderBreakdown(){
   const rows = Object.entries(by).sort((a, b) => b[1] - a[1]);
   const max = rows[0][1] || 1;
   $('breakdown').innerHTML = rows.map(([c, v]) =>
-    '<div class="cat"><span class="n">' + esc(c) + '</span>' +
+    '<div class="cat' + (filterCat && filterCat !== c ? ' faded' : '') + '" data-c="' + esc(c) + '">' +
+    '<span class="n">' + esc(c) + '<em class="num">' + (total ? Math.round(v / total * 100) : 0) + '%</em></span>' +
     '<span class="track"><i style="width:' + (v / max * 100).toFixed(1) + '%;background:' + colorOf(c) + '"></i></span>' +
-    '<span class="a num">' + fmt(v) + '<em>' + (total ? Math.round(v / total * 100) : 0) + '%</em></span></div>'
+    '<span class="a num">' + fmt(v) + '</span></div>'
   ).join('');
 }
 
@@ -679,9 +696,12 @@ function itemHtml(e, btn, showDate){
 
 function renderList(){
   const el = $('list');
+  $('listTitle').innerHTML = '明细' + (filterCat ? '<span> · ' + esc(filterCat) + '</span>' : '');
+  $('showAll').classList.toggle('show', !!filterCat);
   if (!entries.length){ el.innerHTML = '<div class="empty">这个月还没有记录</div>'; return; }
+  const shown = filterCat ? entries.filter(e => e.cat === filterCat) : entries;
   const days = {};
-  entries.forEach(e => (days[e.date] = days[e.date] || []).push(e));
+  shown.forEach(e => (days[e.date] = days[e.date] || []).push(e));
   el.innerHTML = Object.keys(days).sort().reverse().map(d => {
     const list = days[d].slice().sort((a, b) => b.t - a.t);
     const label = md(d) + ' ' + WEEK[new Date(d + 'T00:00:00').getDay()] + (d === todayStr() ? ' · 今天' : '');
@@ -865,6 +885,16 @@ $('chips').onclick = e => {
 $('prev').onclick = () => openMonth(shiftMonth(viewKey, -1));
 $('next').onclick = () => openMonth(shiftMonth(viewKey, 1));
 
+$('breakdown').onclick = e => {
+  const row = e.target.closest('.cat'); if (!row) return;
+  filterCat = filterCat === row.dataset.c ? null : row.dataset.c;
+  renderBreakdown(); renderList();
+};
+$('showAll').onclick = () => { filterCat = null; renderBreakdown(); renderList(); };
+// 点了 × 变成「删除」后，碰屏幕其他任何地方就取消
+function disarmDel(){ document.querySelectorAll('#list .del.arm').forEach(x => { x.classList.remove('arm'); x.textContent = '×'; }); }
+document.addEventListener('pointerdown', e => { if (!e.target.closest('#list .del.arm')) disarmDel(); }, true);
+
 $('list').onclick = e => {
   const b = e.target.closest('.del');
   if (!b){
@@ -876,7 +906,7 @@ $('list').onclick = e => {
     return;
   }
   if (!b.classList.contains('arm')){
-    document.querySelectorAll('#list .del.arm').forEach(x => { x.classList.remove('arm'); x.textContent = '×'; });
+    disarmDel();
     b.classList.add('arm'); b.textContent = '删除';
     setTimeout(() => { if (b.isConnected){ b.classList.remove('arm'); b.textContent = '×'; } }, 3000);
     return;
@@ -966,12 +996,17 @@ function cleanProposals(arr){
 }
 
 /* ================= 键盘弹出时，按钮跟着往上移 ================= */
+document.addEventListener('gesturestart', e => e.preventDefault());
+
 function placeBar(){
   const vv = window.visualViewport;
   const root = document.documentElement.style;
   if (vv){
+    // 只有正在输入（有光标）时才把按钮往上推；快速滑动时这些数字会乱跳，不能当成键盘
+    const a = document.activeElement;
+    const typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT');
     const off = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-    root.setProperty('--kb', off + 'px');
+    root.setProperty('--kb', (typing && off > 80 ? off : 0) + 'px');
     root.setProperty('--vvh', vv.height + 'px');
   }
   root.setProperty('--bar', $('actionbar').offsetHeight + 'px');
@@ -979,6 +1014,8 @@ function placeBar(){
 if (window.visualViewport){
   visualViewport.addEventListener('resize', placeBar);
   visualViewport.addEventListener('scroll', placeBar);
+  document.addEventListener('focusin', () => setTimeout(placeBar, 50));
+  document.addEventListener('focusout', () => setTimeout(placeBar, 50));
 }
 window.addEventListener('resize', placeBar);
 
