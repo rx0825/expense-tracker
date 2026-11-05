@@ -127,6 +127,14 @@ body.confirming .confirm{display:flex}
 .confirm .after b{color:var(--ink)}
 .confirm .after .over{color:var(--danger)}
 .confirm .head{font-size:13px;color:var(--muted);margin-bottom:4px}
+.catbtn{display:inline-flex;align-items:center;gap:5px;padding:3px 8px 3px 9px;border-radius:99px;background:var(--chip);font-size:14px;white-space:nowrap;flex:0 0 auto}
+.catbtn i{width:7px;height:7px;border-radius:50%}
+.catbtn .caret{font-size:10px;color:var(--muted)}
+.confirm .one .c{gap:8px}
+.confirm .one .nt{color:var(--muted)}
+.picker{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:8px 0 4px}
+.confirm .item + .picker{justify-content:flex-start;padding:0 0 8px}
+.picker .chip{padding:5px 11px;font-size:13px}
 .confirm .one .c{max-width:100%;flex-wrap:wrap;justify-content:center;word-break:break-word}
 .confirm .item{align-items:flex-start}
 .confirm .item .dot{margin-top:7px}
@@ -305,7 +313,7 @@ const DEFAULT_CATS = [
 ];
 const MAX_CATS = 10;
 const WEEK = ['周日','周一','周二','周三','周四','周五','周六'];
-const APP_VERSION = '4';
+const APP_VERSION = '5';
 const AI_MODEL = 'claude-haiku-5-5';
 const BACKUP_EVERY_DAYS = 7;
 
@@ -320,7 +328,7 @@ let busy = false;
 
 function defaultSettings(){
   return { budget: 0, main: 'USD', curs: ['USD','CNY'], units: {...DEFAULT_UNITS},
-           cats: DEFAULT_CATS.map(c => ({...c})), lastT: 0, firstT: 0, lastBackup: 0, legacyCur: 'USD' };
+           cats: DEFAULT_CATS.map(c => ({...c})), lastT: 0, firstT: 0, lastBackup: 0, legacyCur: 'USD', learn: {} };
 }
 
 const $ = id => document.getElementById(id);
@@ -380,8 +388,48 @@ function normalizeSettings(b){
     main, curs, units,
     cats: cats.length ? cats : DEFAULT_CATS.map(c => ({...c})),
     lastT: Number(b.lastT) || 0, firstT: Number(b.firstT) || 0, lastBackup: Number(b.lastBackup) || 0,
+    learn: cleanLearn(b.learn),
     legacyCur
   };
+}
+
+/* ================= 记住你的分类习惯 ================= */
+// learn 的格式：{ "西太后": { cat: "购物", t: 时间 } }，最多记 200 条
+const LEARN_MAX = 200;
+function normKey(s){ return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 30); }
+function cleanLearn(l){
+  const out = {};
+  if (l && typeof l === 'object') Object.keys(l).forEach(k => {
+    const v = l[k], key = normKey(k);
+    if (key.length >= 2 && v && typeof v.cat === 'string') out[key] = { cat: v.cat.slice(0, 6), t: Number(v.t) || 0 };
+  });
+  return out;
+}
+function learnSet(note, cat){
+  const key = normKey(note);
+  if (key.length < 2) return;
+  settings.learn[key] = { cat, t: Date.now() };
+  const keys = Object.keys(settings.learn);
+  if (keys.length > LEARN_MAX){
+    keys.sort((a, b) => settings.learn[a].t - settings.learn[b].t).slice(0, keys.length - LEARN_MAX).forEach(k => delete settings.learn[k]);
+  }
+}
+// 按备注找你以前定过的类别：完全一样优先，其次是备注里包含学过的词（取最长的那个）
+function learnedCat(note){
+  const n = normKey(note);
+  if (!n) return null;
+  const L = settings.learn;
+  const ok = c => settings.cats.some(x => x.name === c);
+  if (L[n] && ok(L[n].cat)) return L[n].cat;
+  let best = null;
+  Object.keys(L).forEach(k => { if (k.length >= 2 && n.includes(k) && ok(L[k].cat) && (!best || k.length > best.length)) best = k; });
+  return best ? L[best].cat : null;
+}
+function learnHints(){
+  return Object.keys(settings.learn)
+    .filter(k => settings.cats.some(c => c.name === settings.learn[k].cat))
+    .sort((a, b) => settings.learn[b].t - settings.learn[a].t).slice(0, 40)
+    .map(k => k + ' → ' + settings.learn[k].cat);
 }
 
 /* ================= 换算 ================= */
@@ -642,6 +690,8 @@ function toast(t, err){
 }
 
 function showConfirm(from, list){
+  pickOpen = -1;
+  list.forEach(e => { e._orig = e.cat; });   // 记下原来的类别，确认时看你有没有改
   pending = { from, list };
   document.body.classList.add('confirming');
   renderConfirm();
@@ -651,6 +701,16 @@ function closeConfirm(){
   pending = null;
   document.body.classList.remove('confirming');
   renderBar();
+}
+let pickOpen = -1;   // 正在改类别的是第几笔
+function catBtn(e, i){
+  return '<button class="catbtn" data-ci="' + i + '"><i style="background:' + colorOf(e.cat) + '"></i>' + esc(e.cat) + '<span class="caret">▾</span></button>';
+}
+function catPicker(e, i){
+  if (pickOpen !== i) return '';
+  return '<div class="picker">' + settings.cats.map(c =>
+    '<button class="chip' + (c.name === e.cat ? ' on' : '') + '" data-pi="' + i + '" data-c="' + esc(c.name) + '"><i style="background:' + c.color + '"></i>' + esc(c.name) + '</button>'
+  ).join('') + '</div>';
 }
 function renderConfirm(){
   const body = $('confirmBody');
@@ -663,20 +723,36 @@ function renderConfirm(){
     html = '<div class="one">' +
       '<div class="a num">' + fmt(e.amt, cur) + '</div>' +
       (cur !== settings.main ? '<div class="meta num">≈ ' + fmt(e.base) + '</div>' : '') +
-      '<div class="c"><i style="background:' + colorOf(e.cat) + '"></i>' + esc(e.cat) + (e.note ? ' · ' + esc(e.note) : '') + '</div>' +
+      '<div class="c">' + catBtn(e, 0) + (e.note ? '<span class="nt">' + esc(e.note) + '</span>' : '') + '</div>' +
       (e.date !== todayStr() ? '<div class="meta">' + md(e.date) + '</div>' : '') +
+      catPicker(e, 0) +
       '</div>';
   } else {
     html = '<div class="head num">' + list.length + ' 笔，合计 ' + fmt(total) + '</div>' +
-      list.map((e, i) => itemHtml(e, '<button class="del" data-i="' + i + '" aria-label="去掉">×</button>', true)).join('');
+      list.map((e, i) => {
+        const cur = curOf(e);
+        const orig = cur !== settings.main ? '<small>(' + esc(fmt(e.amt, cur)) + ')</small>' : '';
+        return '<div class="item">' +
+          '<span class="d">' + (e.date === todayStr() ? '今天' : md(e.date)) + '</span>' +
+          catBtn(e, i) +
+          '<span class="note">' + esc(e.note || '') + '</span>' +
+          '<span class="m num">' + fmt(mainVal(e)) + orig + '</span>' +
+          '<button class="del" data-i="' + i + '" aria-label="去掉">×</button></div>' + catPicker(e, i);
+      }).join('');
   }
   const a = afterText(inView);
   if (a) html += '<div class="after">' + a + '</div>';
   body.innerHTML = html;
 }
 $('confirmBody').addEventListener('click', e => {
-  const b = e.target.closest('button[data-i]'); if (!b || !pending) return;
+  if (!pending) return;
+  const cb = e.target.closest('button[data-ci]');
+  if (cb){ const i = Number(cb.dataset.ci); pickOpen = pickOpen === i ? -1 : i; renderConfirm(); return; }
+  const pb = e.target.closest('button[data-pi]');
+  if (pb){ pending.list[Number(pb.dataset.pi)].cat = pb.dataset.c; pickOpen = -1; renderConfirm(); return; }
+  const b = e.target.closest('button[data-i]'); if (!b) return;
   pending.list.splice(Number(b.dataset.i), 1);
+  pickOpen = -1;
   if (!pending.list.length){ closeConfirm(); return; }
   renderConfirm(); renderBar();
 });
@@ -691,7 +767,12 @@ $('dim').addEventListener('click', closeConfirm);
 $('confirm').addEventListener('click', e => { if (e.target === $('confirm')) closeConfirm(); });
 
 function doCommit(){
-  const { from, list } = pending;
+  const { from } = pending;
+  const list = pending.list.map(e => {
+    // 你改过类别的、或者手动记的带备注的，都记住「备注 → 类别」
+    if (e.note && (from === 'manual' || e.cat !== e._orig)) learnSet(e.note, e.cat);
+    const c = {...e}; delete c._orig; return c;
+  });
   commit(list);
   if (from === 'ai') $('aiText').value = '';
   else { $('amount').value = ''; $('note').value = ''; }
@@ -762,11 +843,14 @@ function buildPrompt(){
     '- 币种只能从这些里选：' + curList + '。',
     '- 没说币种时，用 ' + settings.main + '（' + cname(settings.main) + '）。「块」「元」本身不代表人民币。',
     '- 明确说了人民币、RMB、或者提到微信、支付宝付款时，用 CNY（如果上面的列表里有）。「刀」「美元」「美金」用 USD。',
-    '- 类别只能从这些里选：' + catList + '。选最接近的；实在不合适用「' + fallback + '」。',
-    '- note 用几个字概括买了什么，比如「麦当劳」「奶茶」。',
+    '- 类别只能从这些里选：' + catList + '。',
+    '- 分类前先想一想这个名字是什么：是品牌、店名还是商品？比如奢侈品牌、服装店、商场归购物；餐厅、咖啡、奶茶归餐饮或对应类别；Uber、地铁、加油归交通。不认识的名字不要因为听起来像食物就归到餐饮。',
+    '- 实在判断不了，用「' + fallback + '」，不要乱猜。',
+    '- note 保留原话里的店名或商品名，用几个字，比如「麦当劳」「西太后」。'
+  ].concat(learnHints().length ? ['', '这个用户以前定过的分类（优先照这个来，note 里出现这些词就用对应类别）：'].concat(learnHints().map(h => '- ' + h)) : []).concat([
     '- 只记支出。收入、转账收款、退款都不要记。',
     '- 如果没有任何支出，输出 []。'
-  ].join('\n');
+  ]).join('\n');
 }
 async function runAI(){
   const text = $('aiText').value.trim();
@@ -814,10 +898,11 @@ function cleanProposals(arr){
     const amt = r2(Number(x.amt));
     if (!(amt > 0 && amt < 1e9)) return null;
     const cur = settings.curs.includes(x.cur) ? x.cur : settings.main;
-    const cat = settings.cats.some(c => c.name === x.cat) ? x.cat : fallback;
+    const note = String(x.note || '').slice(0, 40);
+    const cat = learnedCat(note) || (settings.cats.some(c => c.name === x.cat) ? x.cat : fallback);
     let date = typeof x.date === 'string' && validDate(x.date) ? x.date : today;
     if (date > today) date = today;
-    return makeEntry(amt, cur, cat, String(x.note || '').slice(0, 40), date);
+    return makeEntry(amt, cur, cat, note, date);
   }).filter(Boolean);
 }
 
