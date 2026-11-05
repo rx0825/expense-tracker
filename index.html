@@ -67,7 +67,11 @@ input,select,textarea{font:inherit;color:var(--ink);font-size:16px}
 .linkbtn{margin-top:12px;color:var(--accent);font-weight:600;font-size:14px}
 
 /* 记账大框 */
-.entry textarea{margin:14px 0 14px;width:100%;min-height:48px;resize:none;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;outline:0;display:block;line-height:1.4}
+.aibox{position:relative;margin:14px 0}
+.aibox #aiClear{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:var(--line);color:var(--muted);font-size:15px;line-height:26px;display:none}
+.aibox.has #aiClear{display:block}
+.aibox textarea{padding-right:42px !important}
+.entry textarea{margin:0;width:100%;min-height:48px;resize:none;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;outline:0;display:block;line-height:1.4}
 .entry textarea:focus{border-color:var(--accent)}
 .entry textarea.active{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .entry .sep{height:1px;background:var(--line);margin:16px 0 12px}
@@ -230,10 +234,10 @@ textarea.field{width:100%;min-height:70px;resize:vertical;font-size:13px;margin:
       <div class="curpick" id="curPick"></div>
     </div>
     <div class="preview" id="preview"></div>
-    <textarea id="aiText" rows="2" maxlength="500"></textarea>
+    <div class="aibox"><textarea id="aiText" rows="2" maxlength="500"></textarea><button id="aiClear" aria-label="清空">×</button></div>
     <div class="chips" id="chips"></div>
     <div class="row2">
-      <input class="field" id="note" placeholder="备注" maxlength="40">
+      <input class="field" id="note" placeholder="备注" maxlength="60">
       <input class="field date" id="date" type="date" aria-label="日期">
     </div>
     <div class="warn" id="curwarn"><span id="curwarnText"></span><button id="backMain"></button></div>
@@ -320,7 +324,7 @@ const DEFAULT_CATS = [
 ];
 const MAX_CATS = 10;
 const WEEK = ['周日','周一','周二','周三','周四','周五','周六'];
-const APP_VERSION = '8';
+const APP_VERSION = '9';
 const AI_MODEL = 'claude-haiku-5-5';
 const BACKUP_EVERY_DAYS = 7;
 
@@ -590,6 +594,7 @@ function renderPreview(){
 }
 
 let chipEdit = false;   // 类别标签是不是在编辑模式
+let chipDraft = [];     // 编辑时先改这份草稿，点「完成」才保存
 function renderChips(){
   if (!chipEdit){
     $('chips').innerHTML = settings.cats.map(c =>
@@ -597,10 +602,11 @@ function renderChips(){
     ).join('') + '<button class="chip edit" id="editChips">编辑</button>';
     return;
   }
-  $('chips').innerHTML = settings.cats.map(c =>
+  $('chips').innerHTML = chipDraft.map(c =>
     '<button class="chip" data-del="' + esc(c.name) + '" aria-label="删除 ' + esc(c.name) + '"><i style="background:' + c.color + '"></i>' + esc(c.name) + '<span class="x">×</span></button>'
   ).join('') +
-  (settings.cats.length < MAX_CATS ? '<button class="chip add" id="addChip" aria-label="添加类别">＋</button>' : '') +
+  (chipDraft.length < MAX_CATS ? '<button class="chip add" id="addChip" aria-label="添加类别">＋</button>' : '') +
+  '<button class="chip edit" id="cancelChips">取消</button>' +
   '<button class="chip done" id="doneChips">完成</button>';
 }
 // 在标签最后直接添加新类别
@@ -614,12 +620,11 @@ function startAddChip(){
     if (done) return; done = true;
     const name = inp.value.trim();
     if (ok && name){
-      if (settings.cats.some(c => c.name === name)){ selCat = name; toast('「' + name + '」已经有了'); }
-      else if (settings.cats.length >= MAX_CATS){ toast('最多 10 个类别', true); }
+      if (chipDraft.some(c => c.name === name)){ toast('「' + name + '」已经有了'); }
+      else if (chipDraft.length >= MAX_CATS){ toast('最多 10 个类别', true); }
       else {
-        const used = new Set(settings.cats.map(c => c.color));
-        settings.cats.push({ name, color: PALETTE.find(p => !used.has(p)) || PALETTE[settings.cats.length % PALETTE.length] });
-        saveSettings(); selCat = name; lastInput = 'manual';
+        const used = new Set(chipDraft.map(c => c.color));
+        chipDraft.push({ name, color: PALETTE.find(p => !used.has(p)) || PALETTE[chipDraft.length % PALETTE.length] });
       }
     }
     renderChips(); renderBar();
@@ -797,7 +802,7 @@ function doCommit(){
     const c = {...e}; delete c._orig; return c;
   });
   commit(list);
-  if (from === 'ai') $('aiText').value = '';
+  if (from === 'ai'){ $('aiText').value = ''; syncAiClear(); }
   else { $('amount').value = ''; $('note').value = ''; }
   const n = list.length;
   const last = list[0];
@@ -819,7 +824,9 @@ function prepareManual(){
 /* ================= 手动输入的交互 ================= */
 $('amount').addEventListener('input', () => { lastInput = 'manual'; renderPreview(); renderBar(); });
 $('note').addEventListener('input', () => { lastInput = 'manual'; renderBar(); });
-$('aiText').addEventListener('input', () => { lastInput = 'ai'; renderBar(); });
+function syncAiClear(){ document.querySelector('.aibox').classList.toggle('has', !!$('aiText').value); }
+$('aiText').addEventListener('input', () => { lastInput = 'ai'; syncAiClear(); renderBar(); });
+$('aiClear').addEventListener('click', () => { $('aiText').value = ''; syncAiClear(); $('aiText').focus(); renderBar(); });
 $('amount').addEventListener('focus', () => { lastInput = 'manual'; renderBar(); });
 $('aiText').addEventListener('focus', () => { lastInput = 'ai'; renderBar(); });
 $('amount').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); $('mainBtn').click(); } });
@@ -830,14 +837,18 @@ $('backMain').onclick = () => { selCur = settings.main; renderCurPick(); renderP
 $('curPick').onclick = e => { const b = e.target.closest('button'); if (!b) return; selCur = b.dataset.c; lastInput = 'manual'; renderCurPick(); renderPreview(); renderWarns(); renderBar(); };
 $('chips').onclick = e => {
   const b = e.target.closest('.chip'); if (!b) return;
-  if (b.id === 'editChips'){ chipEdit = true; renderChips(); return; }
-  if (b.id === 'doneChips'){ chipEdit = false; renderChips(); return; }
+  if (b.id === 'editChips'){ chipEdit = true; chipDraft = settings.cats.map(c => ({...c})); renderChips(); return; }
+  if (b.id === 'cancelChips'){ chipEdit = false; renderChips(); return; }
+  if (b.id === 'doneChips'){
+    settings.cats = chipDraft.map(c => ({...c}));
+    saveSettings();
+    if (!settings.cats.some(c => c.name === selCat)) selCat = settings.cats[0].name;
+    chipEdit = false; renderChips(); return;
+  }
   if (b.id === 'addChip'){ startAddChip(); return; }
   if (b.dataset.del){
-    if (settings.cats.length <= 1){ toast('至少要留一个类别', true); return; }
-    settings.cats = settings.cats.filter(c => c.name !== b.dataset.del);
-    saveSettings();
-    if (selCat === b.dataset.del) selCat = settings.cats[0].name;
+    if (chipDraft.length <= 1){ toast('至少要留一个类别', true); return; }
+    chipDraft = chipDraft.filter(c => c.name !== b.dataset.del);
     renderChips(); return;
   }
   selCat = b.dataset.c; lastInput = 'manual'; renderChips(); renderBar();
@@ -885,7 +896,7 @@ function buildPrompt(){
     '- 类别只能从这些里选：' + catList + '。',
     '- 分类前先想一想这个名字是什么：是品牌、店名还是商品？比如奢侈品牌、服装店、商场归购物；餐厅、咖啡、奶茶归餐饮或对应类别；Uber、地铁、加油归交通。不认识的名字不要因为听起来像食物就归到餐饮。',
     '- 实在判断不了，用「' + fallback + '」，不要乱猜。',
-    '- note 保留原话里的店名或商品名，用几个字，比如「麦当劳」「西太后」。'
+    '- note 写这笔钱花在哪：完整保留用户原话里的店名、品牌或商品名，一个字都不要缩写、概括或翻译（最多 60 个字）。比如用户说「在 Abercrombie & Fitch 买了一件卫衣」，note 就是「Abercrombie & Fitch 卫衣」。'
   ].concat(learnHints().length ? ['', '这个用户以前定过的分类（优先照这个来，note 里出现这些词就用对应类别）：'].concat(learnHints().map(h => '- ' + h)) : []).concat([
     '- 只记支出。收入、转账收款、退款都不要记。',
     '- 如果没有任何支出，输出 []。'
@@ -937,7 +948,7 @@ function cleanProposals(arr){
     const amt = r2(Number(x.amt));
     if (!(amt > 0 && amt < 1e9)) return null;
     const cur = settings.curs.includes(x.cur) ? x.cur : settings.main;
-    const note = String(x.note || '').slice(0, 40);
+    const note = String(x.note || '').slice(0, 60);
     const cat = learnedCat(note) || (settings.cats.some(c => c.name === x.cat) ? x.cat : fallback);
     let date = typeof x.date === 'string' && validDate(x.date) ? x.date : today;
     if (date > today) date = today;
