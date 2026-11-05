@@ -60,12 +60,12 @@ input,select,textarea{font:inherit;color:var(--ink);font-size:16px}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
 .stat{background:var(--chip);border-radius:12px;padding:10px 12px}
 .stat .v{font-size:19px;font-weight:600;margin-top:1px}
-.stat .v.warn{color:var(--danger)}
+.stat .v.neg{color:var(--danger);font-size:17px;white-space:nowrap}
 .stat .s{font-size:12px;color:var(--muted)}
 .linkbtn{margin-top:12px;color:var(--accent);font-weight:600;font-size:14px}
 
 /* 记账大框 */
-.entry textarea{width:100%;min-height:52px;resize:none;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;outline:0;display:block;line-height:1.4}
+.entry textarea{margin:14px 0 14px;width:100%;min-height:48px;resize:none;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;outline:0;display:block;line-height:1.4}
 .entry textarea:focus{border-color:var(--accent)}
 .entry textarea.active{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .entry .sep{height:1px;background:var(--line);margin:16px 0 12px}
@@ -77,13 +77,16 @@ input,select,textarea{font:inherit;color:var(--ink);font-size:16px}
 .curpick button{min-width:38px;height:32px;padding:0 8px;border-radius:9px;background:var(--chip);font-size:14px;color:var(--muted)}
 .curpick button.on{background:var(--ink);color:var(--card)}
 .curpick button.on.foreign{background:var(--amber);color:#fff}
-.preview{font-size:13px;color:var(--muted);min-height:20px;margin:8px 0 12px}
+.preview{font-size:13px;color:var(--muted);margin:8px 0 0}
+.preview:empty{display:none}
 .preview b{color:var(--ink);font-weight:600}
 .preview .over{color:var(--danger)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
 .chip{padding:7px 14px;border-radius:99px;background:var(--chip);font-size:14px;display:inline-flex;align-items:center;gap:6px}
 .chip i{width:7px;height:7px;border-radius:50%}
 .chip.on{background:var(--ink);color:var(--card)}
+.chip.add{color:var(--muted);padding:7px 13px}
+.chipinput{width:96px;padding:6px 12px;border-radius:99px;border:1.5px solid var(--accent);background:var(--bg);outline:0;font-size:16px}
 .row2{display:flex;gap:8px}
 .field{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;outline:0}
 .field:focus{border-color:var(--accent)}
@@ -110,9 +113,9 @@ body.settings-open .actionbar{display:none}
 /* 确认弹窗 */
 .dim{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:20;display:none}
 body.confirming .dim{display:block}
-.confirm{position:fixed;left:0;right:0;bottom:calc(var(--kb) + var(--bar) + env(safe-area-inset-bottom));z-index:25;display:none;padding:0 16px 6px}
-body.confirming .confirm{display:block}
-.confirm .in{max-width:480px;margin:0 auto;background:var(--card);border-radius:18px;padding:16px 18px;max-height:calc(var(--vvh, 100vh) - var(--kb) - var(--bar) - 60px);overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.15)}
+.confirm{position:fixed;left:0;right:0;top:env(safe-area-inset-top);bottom:calc(var(--kb) + var(--bar));z-index:25;display:none;padding:16px;align-items:center;justify-content:center}
+body.confirming .confirm{display:flex}
+.confirm .in{width:100%;max-width:440px;margin:0 auto;background:var(--card);border-radius:18px;padding:16px 18px;max-height:100%;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.15)}
 .confirm .one{text-align:center;padding:6px 0 2px}
 .confirm .one .a{font-size:36px;font-weight:650}
 .confirm .one .c{display:inline-flex;align-items:center;gap:6px;font-size:15px;margin-top:4px}
@@ -122,6 +125,10 @@ body.confirming .confirm{display:block}
 .confirm .after b{color:var(--ink)}
 .confirm .after .over{color:var(--danger)}
 .confirm .head{font-size:13px;color:var(--muted);margin-bottom:4px}
+.confirm .one .c{max-width:100%;flex-wrap:wrap;justify-content:center;word-break:break-word}
+.confirm .item{align-items:flex-start}
+.confirm .item .dot{margin-top:7px}
+.confirm .item .note,.item.open .note{white-space:normal;overflow:visible;word-break:break-word}
 
 .cat{display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:10px;margin:9px 0}
 .cat .n{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -136,6 +143,7 @@ body.confirming .confirm{display:block}
 .dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
 .item .d{font-size:12px;color:var(--muted);white-space:nowrap}
 .item .c{font-size:14px;white-space:nowrap}
+#list .item{cursor:pointer}
 .item .note{font-size:13px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .item .m{font-size:15px;font-weight:600;text-align:right;white-space:nowrap}
 .item .m small{display:block;font-size:12px;font-weight:400;color:var(--muted);line-height:1.2}
@@ -198,14 +206,13 @@ textarea.field{width:100%;min-height:70px;resize:vertical;font-size:13px;margin:
   <section class="card" id="hero"></section>
 
   <section class="card entry">
-    <textarea id="aiText" rows="2" maxlength="500"></textarea>
-    <div class="sep"></div>
     <div class="amt" id="amtRow">
       <span class="sym" id="curSym">$</span>
       <input id="amount" inputmode="decimal" placeholder="0.00" autocomplete="off" aria-label="金额">
       <div class="curpick" id="curPick"></div>
     </div>
     <div class="preview" id="preview"></div>
+    <textarea id="aiText" rows="2" maxlength="500"></textarea>
     <div class="chips" id="chips"></div>
     <div class="row2">
       <input class="field" id="note" placeholder="备注" maxlength="40">
@@ -468,7 +475,7 @@ function renderHero(){
     const canSpend = allowance - todaySpent;
     stats =
       '<div class="stats">' +
-        '<div class="stat"><div class="label">今天还能花</div><div class="v num' + (canSpend < 0 ? ' warn' : '') + '">' +
+        '<div class="stat"><div class="label">今天还能花</div><div class="v num' + (canSpend < 0 ? ' neg' : '') + '">' +
           (canSpend < 0 ? '超了 ' + fmt(-canSpend) : fmt(canSpend)) + '</div><div class="s num">额度 ' + fmt(allowance) + '</div></div>' +
         '<div class="stat"><div class="label">今天已花</div><div class="v num">' + fmt(todaySpent) + '</div></div>' +
       '</div>';
@@ -485,7 +492,7 @@ function renderAIBox(){
   const t = $('aiText');
   const has = !!getKey();
   t.disabled = !has;
-  t.placeholder = has ? '说一句让 AI 记，比如：中午麦当劳 12 刀，奶茶 25 块人民币' : '在设置里填 API key 后可以用 AI 记账';
+  t.placeholder = has ? '或者说一句，AI 帮你记' : '在设置里填 API key 后，可以说一句让 AI 记';
 }
 
 function renderCurPick(){
@@ -526,7 +533,31 @@ function renderPreview(){
 function renderChips(){
   $('chips').innerHTML = settings.cats.map(c =>
     '<button class="chip' + (c.name === selCat ? ' on' : '') + '" data-c="' + esc(c.name) + '"><i style="background:' + c.color + '"></i>' + esc(c.name) + '</button>'
-  ).join('');
+  ).join('') + (settings.cats.length < MAX_CATS ? '<button class="chip add" id="addChip" aria-label="添加类别">＋</button>' : '');
+}
+// 在标签最后直接添加新类别
+function startAddChip(){
+  const btn = $('addChip'); if (!btn) return;
+  const inp = document.createElement('input');
+  inp.className = 'chipinput'; inp.maxLength = 6; inp.placeholder = '新类别';
+  btn.replaceWith(inp); inp.focus();
+  let done = false;
+  const finish = ok => {
+    if (done) return; done = true;
+    const name = inp.value.trim();
+    if (ok && name){
+      if (settings.cats.some(c => c.name === name)){ selCat = name; toast('「' + name + '」已经有了'); }
+      else if (settings.cats.length >= MAX_CATS){ toast('最多 10 个类别', true); }
+      else {
+        const used = new Set(settings.cats.map(c => c.color));
+        settings.cats.push({ name, color: PALETTE.find(p => !used.has(p)) || PALETTE[settings.cats.length % PALETTE.length] });
+        saveSettings(); selCat = name; lastInput = 'manual';
+      }
+    }
+    renderChips(); renderBar();
+  };
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); finish(true); } else if (e.key === 'Escape') finish(false); });
+  inp.addEventListener('blur', () => finish(true));
 }
 
 function renderWarns(){
@@ -653,6 +684,7 @@ $('mainBtn').addEventListener('click', () => {
 });
 $('cancelBtn').addEventListener('click', closeConfirm);
 $('dim').addEventListener('click', closeConfirm);
+$('confirm').addEventListener('click', e => { if (e.target === $('confirm')) closeConfirm(); });
 
 function doCommit(){
   const { from, list } = pending;
@@ -688,12 +720,17 @@ $('date').addEventListener('change', renderWarns);
 $('backToday').onclick = () => { $('date').value = todayStr(); renderWarns(); };
 $('backMain').onclick = () => { selCur = settings.main; renderCurPick(); renderPreview(); renderWarns(); };
 $('curPick').onclick = e => { const b = e.target.closest('button'); if (!b) return; selCur = b.dataset.c; lastInput = 'manual'; renderCurPick(); renderPreview(); renderWarns(); renderBar(); };
-$('chips').onclick = e => { const b = e.target.closest('.chip'); if (!b) return; selCat = b.dataset.c; lastInput = 'manual'; renderChips(); renderBar(); };
+$('chips').onclick = e => {
+  const b = e.target.closest('.chip'); if (!b) return;
+  if (b.id === 'addChip'){ startAddChip(); return; }
+  selCat = b.dataset.c; lastInput = 'manual'; renderChips(); renderBar();
+};
 $('prev').onclick = () => openMonth(shiftMonth(viewKey, -1));
 $('next').onclick = () => openMonth(shiftMonth(viewKey, 1));
 
 $('list').onclick = e => {
-  const b = e.target.closest('.del'); if (!b) return;
+  const b = e.target.closest('.del');
+  if (!b){ const it = e.target.closest('.item'); if (it) it.classList.toggle('open'); return; }
   if (!b.classList.contains('arm')){
     document.querySelectorAll('#list .del.arm').forEach(x => { x.classList.remove('arm'); x.textContent = '×'; });
     b.classList.add('arm'); b.textContent = '删除';
