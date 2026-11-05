@@ -161,6 +161,16 @@ body.confirming .confirm{display:flex}
 .cat .track i{display:block;height:100%;border-radius:99px}
 .cat .a{font-size:15px;text-align:right}
 #breakPart{margin-bottom:30px}
+.titlerow.hd{align-items:center;min-height:30px;margin-bottom:16px}
+.rangepick{display:flex;gap:4px}
+.rangepick button{height:30px;padding:0 10px;border-radius:9px;background:var(--chip);font-size:14px;color:var(--muted)}
+.rangepick button.on{background:var(--ink);color:var(--card)}
+.wk{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 0;border-top:1px solid var(--line);font-size:15px;font-weight:600;cursor:pointer}
+#list > .wk:first-child{border-top:0;padding-top:2px}
+.wk .r{display:flex;align-items:center;gap:8px}
+.wk .car{width:14px;text-align:center;font-size:12px;color:var(--muted);font-weight:400}
+.wkbody{display:none;padding-bottom:6px}
+.wkbody.open{display:block}
 .titlerow{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 12px}
 .titlerow .title{margin:0}
 .titlerow .title span{color:var(--muted);font-weight:500}
@@ -265,12 +275,13 @@ textarea.field{width:100%;min-height:70px;resize:vertical;font-size:13px;margin:
   </section>
 
   <section class="card">
-    <div id="breakPart" style="display:none">
-      <p class="title">钱花在了哪</p>
-      <div id="breakdown"></div>
+    <div class="titlerow hd"><p class="title">钱花在了哪</p><div class="rangepick" id="rangePick"></div></div>
+    <div id="breakPart"><div id="breakdown"></div></div>
+    <div class="empty" id="rangeEmpty"></div>
+    <div id="listPart">
+      <div class="titlerow"><p class="title" id="listTitle">明细</p><button id="showAll">全部</button></div>
+      <div id="list"></div>
     </div>
-    <div class="titlerow"><p class="title" id="listTitle">明细</p><button id="showAll">全部</button></div>
-    <div id="list"></div>
   </section>
 </div>
 
@@ -343,9 +354,13 @@ const DEFAULT_CATS = [
 ];
 const MAX_CATS = 10;
 const WEEK = ['周日','周一','周二','周三','周四','周五','周六'];
-const APP_VERSION = '12';
+const APP_VERSION = '13';
 const AI_MODEL = 'claude-haiku-5-5';
 const BACKUP_EVERY_DAYS = 7;
+// 「钱花在了哪」和明细的范围，从长到短
+const RANGES = [ {k:'month', n:'本月', empty:'这个月还没有记录'},
+                 {k:'week',  n:'本周', empty:'这周还没有记录'},
+                 {k:'3d',    n:'近3天', empty:'这 3 天还没有记录'} ];
 
 let settings = defaultSettings();
 let entries = [];
@@ -355,11 +370,12 @@ let selCur = 'USD';
 let lastInput = 'manual';      // 最后在哪个框输入：'ai' 或 'manual'
 let pending = null;            // 等待确认的账：{ from: 'ai'|'manual', list: [...] }
 let busy = false;
+let openWeeks = new Set();     // 按周折叠时，展开了哪几周（存每周周一的日期）
 let filterCat = null;         // 明细只看哪个类别（点「钱花在了哪」里的某一行），null 是全部
 
 function defaultSettings(){
   return { budget: 0, main: 'USD', curs: ['USD','CNY'], units: {...DEFAULT_UNITS},
-           cats: DEFAULT_CATS.map(c => ({...c})), lastT: 0, firstT: 0, lastBackup: 0, legacyCur: 'USD', learn: {} };
+           cats: DEFAULT_CATS.map(c => ({...c})), lastT: 0, firstT: 0, lastBackup: 0, legacyCur: 'USD', learn: {}, range: 'month' };
 }
 
 const $ = id => document.getElementById(id);
@@ -420,6 +436,7 @@ function normalizeSettings(b){
     cats: cats.length ? cats : DEFAULT_CATS.map(c => ({...c})),
     lastT: Number(b.lastT) || 0, firstT: Number(b.firstT) || 0, lastBackup: Number(b.lastBackup) || 0,
     learn: cleanLearn(b.learn),
+    range: RANGES.some(r => r.k === b.range) ? b.range : 'month',
     legacyCur
   };
 }
@@ -500,7 +517,26 @@ function commit(list){
   if (!settings.firstT) settings.firstT = now;
   saveSettings();
 }
-function openMonth(key){ viewKey = key; filterCat = null; entries = loadMonth(key).map(e => ({...e})); render(); }
+function openMonth(key){ viewKey = key; filterCat = null; resetWeeks(); entries = loadMonth(key).map(e => ({...e})); render(); }
+
+/* ================= 范围（本月 / 本周 / 近3天） ================= */
+function addDays(ds, n){ const d = new Date(ds + 'T00:00:00'); d.setDate(d.getDate() + n); return dateStr(d); }
+function mondayOf(ds){ const d = new Date(ds + 'T00:00:00'); return addDays(ds, -((d.getDay() + 6) % 7)); }
+// 现在实际在用的范围：翻到以前的月份时永远是整个月
+function curRange(){ return isCurrentMonth() ? settings.range : 'month'; }
+// 范围里的所有记录（本周、近3天可能跨到上个月）
+function rangeEntries(){
+  const r = curRange();
+  if (r === 'month') return entries;
+  const today = todayStr();
+  const start = r === 'week' ? mondayOf(today) : addDays(today, -2);
+  const end = r === 'week' ? addDays(start, 6) : today;
+  let list = entries;
+  if (start.slice(0, 7) !== viewKey) list = loadMonth(start.slice(0, 7)).concat(list);
+  return list.filter(e => e.date >= start && e.date <= end);
+}
+// 按周折叠：看当前月份时，这一周默认展开；以前的月份全部收起
+function resetWeeks(){ openWeeks = new Set(isCurrentMonth() ? [mondayOf(todayStr())] : []); }
 
 /* ================= 渲染 ================= */
 function render(){
@@ -515,8 +551,7 @@ function render(){
   if (!d.value || d.value.slice(0,7) !== viewKey) d.value = isCurrentMonth() ? todayStr() : viewKey + '-01';
 
   renderBanners(); renderHero(); renderAIBox(); renderCurPick(); renderPreview();
-  if (filterCat && !entries.some(e => e.cat === filterCat)) filterCat = null;   // 这个类别没有记录了，就取消筛选
-  renderChips(); renderWarns(); renderBreakdown(); renderList(); renderBar();
+  renderChips(); renderWarns(); renderRangeCard(); renderBar();
 }
 
 function renderBanners(){
@@ -666,13 +701,27 @@ function renderWarns(){
   $('backToday').style.display = isCurrentMonth() ? '' : 'none';
 }
 
-function renderBreakdown(){
-  const card = $('breakPart');
-  if (!entries.length){ card.style.display = 'none'; return; }
-  card.style.display = '';
-  const total = sum(entries);
+// 合并的大框：范围选择 + 钱花在了哪 + 明细
+function renderRangeCard(){
+  const list = rangeEntries();
+  if (filterCat && !list.some(e => e.cat === filterCat)) filterCat = null;   // 这个类别在范围里没有记录了，就取消筛选
+  const r = curRange();
+  $('rangePick').innerHTML = isCurrentMonth()
+    ? RANGES.map(x => '<button data-r="' + x.k + '"' + (x.k === r ? ' class="on"' : '') + '>' + x.n + '</button>').join('') : '';
+  const has = list.length > 0;
+  $('breakPart').style.display = has ? '' : 'none';
+  $('listPart').style.display = has ? '' : 'none';
+  $('rangeEmpty').style.display = has ? 'none' : '';
+  $('rangeEmpty').textContent = RANGES.find(x => x.k === r).empty;
+  if (!has) return;
+  renderBreakdown(list);
+  renderList(list);
+}
+
+function renderBreakdown(list){
+  const total = sum(list);
   const by = {};
-  entries.forEach(e => by[e.cat] = (by[e.cat] || 0) + mainVal(e));
+  list.forEach(e => by[e.cat] = (by[e.cat] || 0) + mainVal(e));
   const rows = Object.entries(by).sort((a, b) => b[1] - a[1]);
   const max = rows[0][1] || 1;
   $('breakdown').innerHTML = rows.map(([c, v]) =>
@@ -694,20 +743,38 @@ function itemHtml(e, btn, showDate){
     '<span class="m num">' + fmt(mainVal(e)) + orig + '</span>' + btn + '</div>';
 }
 
-function renderList(){
+function dayHtml(d, list){
+  list = list.slice().sort((a, b) => b.t - a.t);
+  const label = md(d) + ' ' + WEEK[new Date(d + 'T00:00:00').getDay()] + (d === todayStr() ? ' · 今天' : '');
+  return '<div class="day"><span>' + label + '</span><span class="num">' + fmt(sum(list)) + '</span></div>' +
+    list.map(e => itemHtml(e, '<button class="del" data-id="' + esc(e.id) + '" aria-label="删除">×</button>')).join('');
+}
+function renderList(all){
   const el = $('list');
   $('listTitle').innerHTML = '明细' + (filterCat ? '<span> · ' + esc(filterCat) + '</span>' : '');
   $('showAll').classList.toggle('show', !!filterCat);
-  if (!entries.length){ el.innerHTML = '<div class="empty">这个月还没有记录</div>'; return; }
-  const shown = filterCat ? entries.filter(e => e.cat === filterCat) : entries;
+  const shown = filterCat ? all.filter(e => e.cat === filterCat) : all;
   const days = {};
   shown.forEach(e => (days[e.date] = days[e.date] || []).push(e));
-  el.innerHTML = Object.keys(days).sort().reverse().map(d => {
-    const list = days[d].slice().sort((a, b) => b.t - a.t);
-    const label = md(d) + ' ' + WEEK[new Date(d + 'T00:00:00').getDay()] + (d === todayStr() ? ' · 今天' : '');
-    return '<div class="day"><span>' + label + '</span><span class="num">' + fmt(sum(list)) + '</span></div>' +
-      list.map(e => itemHtml(e, '<button class="del" data-id="' + esc(e.id) + '" aria-label="删除">×</button>')).join('');
-  }).join('');
+  const dayKeys = Object.keys(days).sort().reverse();
+  if (curRange() !== 'month'){
+    // 本周、近3天：不折叠
+    el.innerHTML = dayKeys.map(d => dayHtml(d, days[d])).join('');
+  } else {
+    // 整个月：按周（周一到周日）折叠，只算这个月里的那几天
+    const first = viewKey + '-01', last = viewKey + '-' + pad(dim(viewKey));
+    const weeks = {};
+    dayKeys.forEach(d => (weeks[mondayOf(d)] = weeks[mondayOf(d)] || []).push(d));
+    el.innerHTML = Object.keys(weeks).sort().reverse().map(w => {
+      const s = w < first ? first : w, e0 = addDays(w, 6), e = e0 > last ? last : e0;
+      const label = s === e ? md(s) : md(s) + ' – ' + Number(e.slice(8)) + '日';
+      const open = openWeeks.has(w);
+      const total = sum(weeks[w].reduce((a, d) => a.concat(days[d]), []));
+      return '<div class="wk" data-w="' + w + '"><span>' + label + '</span><span class="r"><span class="num">' + fmt(total) + '</span>' +
+        '<span class="car">' + (open ? '▾' : '▸') + '</span></span></div>' +
+        '<div class="wkbody' + (open ? ' open' : '') + '">' + weeks[w].map(d => dayHtml(d, days[d])).join('') + '</div>';
+    }).join('');
+  }
   markTruncated();
 }
 // 备注被截断（显示成 …）的那几条，后面加「展开」
@@ -888,14 +955,26 @@ $('next').onclick = () => openMonth(shiftMonth(viewKey, 1));
 $('breakdown').onclick = e => {
   const row = e.target.closest('.cat'); if (!row) return;
   filterCat = filterCat === row.dataset.c ? null : row.dataset.c;
-  renderBreakdown(); renderList();
+  renderRangeCard();
 };
-$('showAll').onclick = () => { filterCat = null; renderBreakdown(); renderList(); };
+$('showAll').onclick = () => { filterCat = null; renderRangeCard(); };
+$('rangePick').onclick = e => {
+  const b = e.target.closest('button[data-r]'); if (!b || b.dataset.r === settings.range) return;
+  settings.range = b.dataset.r; saveSettings();
+  filterCat = null; resetWeeks();
+  renderRangeCard();
+};
 // 点了 × 变成「删除」后，碰屏幕其他任何地方就取消
 function disarmDel(){ document.querySelectorAll('#list .del.arm').forEach(x => { x.classList.remove('arm'); x.textContent = '×'; }); }
 document.addEventListener('pointerdown', e => { if (!e.target.closest('#list .del.arm')) disarmDel(); }, true);
 
 $('list').onclick = e => {
+  const wk = e.target.closest('.wk');
+  if (wk){
+    const w = wk.dataset.w;
+    openWeeks.has(w) ? openWeeks.delete(w) : openWeeks.add(w);
+    renderRangeCard(); return;
+  }
   const b = e.target.closest('.del');
   if (!b){
     const it = e.target.closest('.item');
@@ -911,8 +990,13 @@ $('list').onclick = e => {
     setTimeout(() => { if (b.isConnected){ b.classList.remove('arm'); b.textContent = '×'; } }, 3000);
     return;
   }
-  entries = entries.filter(x => x.id !== b.dataset.id);
-  saveMonth(viewKey, entries);
+  const id = b.dataset.id;
+  if (entries.some(x => x.id === id)){ entries = entries.filter(x => x.id !== id); saveMonth(viewKey, entries); }
+  else {
+    // 本周、近3天里可能有上个月的记录
+    const pk = shiftMonth(viewKey, -1);
+    saveMonth(pk, loadMonth(pk).filter(x => x.id !== id));
+  }
   render();
 };
 
