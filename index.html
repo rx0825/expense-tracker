@@ -54,16 +54,15 @@ input,select,textarea{font:inherit;color:var(--ink);font-size:16px}
 /* 概览 */
 .big{font-size:42px;font-weight:650;letter-spacing:-.5px;line-height:1.15;margin:2px 0 4px}
 .big.over{color:var(--danger)}
-.spent{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.spent{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin-top:10px}
 .spent b{font-size:24px;font-weight:600}
-.spent span{font-size:14px;color:var(--muted)}
+.spent span{font-size:20px;color:var(--muted)}
 .bar{height:8px;background:var(--chip);border-radius:99px;overflow:hidden;margin:14px 0 4px}
 .bar i{display:block;height:100%;border-radius:99px;background:var(--accent);transition:width .3s}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-.stat{background:var(--chip);border-radius:12px;padding:10px 12px}
-.stat .v{font-size:19px;font-weight:600;margin-top:1px}
-.stat .v.neg{color:var(--danger);font-size:17px;white-space:nowrap}
-.stat .s{font-size:12px;color:var(--muted)}
+.stat{background:var(--chip);border-radius:12px;padding:10px 14px 12px;container-type:inline-size}
+.stat .v{font-size:clamp(18px,18cqi,30px);font-weight:650;line-height:1.2;margin-top:2px;white-space:nowrap}
+.stat .v.neg{color:var(--danger)}
 .linkbtn{margin-top:12px;color:var(--accent);font-weight:600;font-size:14px}
 
 /* 记账大框 */
@@ -313,7 +312,7 @@ const DEFAULT_CATS = [
 ];
 const MAX_CATS = 10;
 const WEEK = ['周日','周一','周二','周三','周四','周五','周六'];
-const APP_VERSION = '6';
+const APP_VERSION = '7';
 const AI_MODEL = 'claude-haiku-5-5';
 const BACKUP_EVERY_DAYS = 7;
 
@@ -523,19 +522,18 @@ function renderHero(){
     const today = todayStr();
     const todaySpent = sum(entries.filter(e => e.date === today));
     const daysLeft = dim(viewKey) - new Date().getDate() + 1;
+    // 平均可花：今天之前剩下的预算，平均分给本月剩下的天数（含今天），一整天不变
     const allowance = Math.max(0, budget - (spent - todaySpent)) / daysLeft;
-    const canSpend = allowance - todaySpent;
     stats =
       '<div class="stats">' +
-        '<div class="stat"><div class="label">今天还能花</div><div class="v num' + (canSpend < 0 ? ' neg' : '') + '">' +
-          (canSpend < 0 ? '超了 ' + fmt(-canSpend) : fmt(canSpend)) + '</div><div class="s num">额度 ' + fmt(allowance) + '</div></div>' +
-        '<div class="stat"><div class="label">今天已花</div><div class="v num">' + fmt(todaySpent) + '</div></div>' +
+        '<div class="stat"><div class="label">平均可花</div><div class="v num">' + fmt(Math.floor(allowance * 100) / 100) + '</div></div>' +
+        '<div class="stat"><div class="label">今天已花</div><div class="v num' + (todaySpent > allowance ? ' neg' : '') + '">' + fmt(todaySpent) + '</div></div>' +
       '</div>';
   }
   el.innerHTML =
     '<div class="label">' + (remaining >= 0 ? (cur ? '本月还剩' : '这个月剩下') : (cur ? '本月超支' : '这个月超支')) + '</div>' +
     '<div class="big num' + (remaining < 0 ? ' over' : '') + '">' + fmt(Math.abs(remaining)) + '</div>' +
-    '<div class="spent num"><b>已花 ' + fmt(spent) + '</b><span>/ 预算 ' + fmt(budget) + '</span></div>' +
+    '<div class="spent num"><b>已花 ' + fmt(spent) + '</b><span>/ ' + fmt(budget) + '</span></div>' +
     '<div class="bar"><i style="width:' + (ratio * 100).toFixed(1) + '%;background:' + color + '"></i></div>' +
     stats;
 }
