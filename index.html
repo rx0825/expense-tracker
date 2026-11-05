@@ -69,6 +69,8 @@ input,select,textarea{font:inherit;color:var(--ink);font-size:16px}
 /* 记账大框 */
 .aibox{position:relative;margin:14px 0}
 .aibox #aiClear{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:var(--line);color:var(--muted);font-size:15px;line-height:26px;display:none}
+.amt .clr{flex:0 0 26px;width:26px;height:26px;border-radius:50%;background:var(--line);color:var(--muted);font-size:15px;line-height:26px;margin-right:4px;display:none}
+.amt.has .clr{display:block}
 .aibox.has #aiClear{display:block}
 .aibox textarea{padding-right:42px !important}
 .entry textarea{margin:0;width:100%;min-height:48px;resize:none;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;outline:0;display:block;line-height:1.4}
@@ -231,6 +233,7 @@ textarea.field{width:100%;min-height:70px;resize:vertical;font-size:13px;margin:
     <div class="amt" id="amtRow">
       <span class="sym" id="curSym">$</span>
       <input id="amount" inputmode="decimal" placeholder="0.00" autocomplete="off" aria-label="金额">
+      <button class="clr" id="amtClear" aria-label="清空金额">×</button>
       <div class="curpick" id="curPick"></div>
     </div>
     <div class="preview" id="preview"></div>
@@ -324,7 +327,7 @@ const DEFAULT_CATS = [
 ];
 const MAX_CATS = 10;
 const WEEK = ['周日','周一','周二','周三','周四','周五','周六'];
-const APP_VERSION = '9';
+const APP_VERSION = '10';
 const AI_MODEL = 'claude-haiku-5-5';
 const BACKUP_EVERY_DAYS = 7;
 
@@ -360,7 +363,7 @@ function fmt(n, code){
   code = code || settings.main;
   const v = Math.abs(n);
   const s = v.toLocaleString('en-US', { minimumFractionDigits: Math.round(v*100) % 100 ? 2 : 0, maximumFractionDigits: 2 });
-  return sym(code) + (n < 0 ? '-' : '') + s;
+  return (n < 0 ? '-' : '') + sym(code) + s;
 }
 function sig(x){ return String(Number(x.toPrecision(4))); }
 function daysSince(t){ const a = new Date(t); a.setHours(0,0,0,0); const b = new Date(); b.setHours(0,0,0,0); return Math.round((b - a) / 86400000); }
@@ -572,7 +575,7 @@ function renderCurPick(){
 function afterText(extra){
   if (!settings.budget) return '';
   const after = settings.budget - sum(entries) - extra;
-  if (after < 0) return '还剩 <span class="over">' + fmt(after) + '</span>';
+  if (after < 0) return '还剩 <span class="over">' + fmt(after) + '</span>，<span class="over">超预算了</span>';
   let t = '还剩 <b>' + fmt(after) + '</b>';
   if (isCurrentMonth()){
     const daysAfter = dim(viewKey) - new Date().getDate();
@@ -803,7 +806,7 @@ function doCommit(){
   });
   commit(list);
   if (from === 'ai'){ $('aiText').value = ''; syncAiClear(); }
-  else { $('amount').value = ''; $('note').value = ''; }
+  else { $('amount').value = ''; $('note').value = ''; syncAmtClear(); }
   const n = list.length;
   const last = list[0];
   closeConfirm();
@@ -822,7 +825,11 @@ function prepareManual(){
 }
 
 /* ================= 手动输入的交互 ================= */
-$('amount').addEventListener('input', () => { lastInput = 'manual'; renderPreview(); renderBar(); });
+function syncAmtClear(){ $('amtRow').classList.toggle('has', !!$('amount').value); }
+$('amount').addEventListener('input', () => { lastInput = 'manual'; syncAmtClear(); renderPreview(); renderBar(); });
+// 按下去时不让输入框失焦，这样清空后键盘不会收起再弹出
+$('amtClear').addEventListener('pointerdown', e => e.preventDefault());
+$('amtClear').addEventListener('click', () => { $('amount').value = ''; syncAmtClear(); $('amount').focus(); lastInput = 'manual'; renderPreview(); renderBar(); });
 $('note').addEventListener('input', () => { lastInput = 'manual'; renderBar(); });
 function syncAiClear(){ document.querySelector('.aibox').classList.toggle('has', !!$('aiText').value); }
 $('aiText').addEventListener('input', () => { lastInput = 'ai'; syncAiClear(); renderBar(); });
