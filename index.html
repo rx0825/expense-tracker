@@ -313,7 +313,7 @@ const DEFAULT_CATS = [
 ];
 const MAX_CATS = 10;
 const WEEK = ['周日','周一','周二','周三','周四','周五','周六'];
-const APP_VERSION = '5';
+const APP_VERSION = '6';
 const AI_MODEL = 'claude-haiku-5-5';
 const BACKUP_EVERY_DAYS = 7;
 
@@ -544,7 +544,7 @@ function renderAIBox(){
   const t = $('aiText');
   const has = !!getKey();
   t.disabled = !has;
-  t.placeholder = has ? '或者说一句，AI 帮你记' : '在设置里填 API key 后，可以说一句让 AI 记';
+  t.placeholder = has ? '说一句，AI 帮你记' : '在设置里填 API key 后，可以说一句让 AI 记';
 }
 
 function renderCurPick(){
