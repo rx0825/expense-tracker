@@ -46,6 +46,8 @@ input,select,textarea{font:inherit;color:var(--ink);font-size:16px}
 .banner{border-radius:14px;padding:10px 14px;font-size:13px;margin-bottom:12px;display:none}
 .banner.show{display:block}
 .banner.remind{background:var(--amber-soft);color:var(--amber)}
+.banner.update{background:var(--accent);color:#fff;text-align:center;padding:0}
+.banner.update button{display:block;width:100%;padding:11px 14px;color:#fff;font-weight:600;text-decoration:none;font-size:14px}
 .banner.info{background:var(--chip);color:var(--muted);text-align:center}
 .banner button{color:inherit;font-weight:600;text-decoration:underline;font-size:13px}
 
@@ -199,6 +201,7 @@ textarea.field{width:100%;min-height:70px;resize:vertical;font-size:13px;margin:
     <button class="gear" id="openSettings">设置</button>
   </div>
 
+  <div class="banner update" id="updateBar"><button id="updateBtn">有新版本，点这里更新</button></div>
   <div class="banner info" id="noteBar"></div>
   <div class="banner remind" id="remindBar"></div>
   <div class="banner remind" id="backupBar"></div>
@@ -302,6 +305,7 @@ const DEFAULT_CATS = [
 ];
 const MAX_CATS = 10;
 const WEEK = ['周日','周一','周二','周三','周四','周五','周六'];
+const APP_VERSION = '4';
 const AI_MODEL = 'claude-haiku-5-5';
 const BACKUP_EVERY_DAYS = 7;
 
@@ -1050,14 +1054,37 @@ function init(){
   openMonth(viewKey);
   placeBar();
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e){}
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:'){
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
+  }
+  checkUpdate();
   const standalone = window.navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
   if (!standalone && /iPhone|iPad/.test(navigator.userAgent)){
     $('noteBar').textContent = '请从主屏幕图标打开，Safari 里的账和主屏幕上的不互通。';
     $('noteBar').classList.add('show');
   }
 }
-document.addEventListener('visibilitychange', () => { if (!document.hidden && !pending) render(); });
+// 检查有没有新版本：version.txt 里的数字和这个页面的 APP_VERSION 不一样，就提示更新
+async function checkUpdate(){
+  if (location.protocol === 'file:' || !navigator.onLine) return;
+  try {
+    const res = await fetch('version.txt?t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return;
+    const v = (await res.text()).trim();
+    if (v && v !== APP_VERSION) $('updateBar').classList.add('show');
+  } catch(e){}
+}
+$('updateBtn').onclick = async () => {
+  $('updateBtn').textContent = '更新中…';
+  try {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg) await reg.update();
+  } catch(e){}
+  location.reload();
+};
+document.addEventListener('visibilitychange', () => { if (!document.hidden){ if (!pending) render(); checkUpdate(); } });
 init();
 </script>
 </body>
