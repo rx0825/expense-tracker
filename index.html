@@ -54,6 +54,7 @@ input,select,textarea{font:inherit;color:var(--ink);font-size:16px}
 /* 概览 */
 .big{font-size:42px;font-weight:650;letter-spacing:-.5px;line-height:1.15;margin:2px 0 4px}
 .big.over{color:var(--danger)}
+.big.num,.stat .v.num{font-variant-numeric:normal}
 .spent{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin-top:10px}
 .spent b{font-size:24px;font-weight:600}
 .spent span{font-size:20px;color:var(--muted)}
@@ -87,6 +88,9 @@ input,select,textarea{font:inherit;color:var(--ink);font-size:16px}
 .chip i{width:7px;height:7px;border-radius:50%}
 .chip.on{background:var(--ink);color:var(--card)}
 .chip.add{color:var(--muted);padding:7px 13px}
+.chip.edit{color:var(--muted)}
+.chip.done{background:var(--accent);color:#fff}
+.chip .x{margin-left:2px;color:var(--danger);font-weight:600}
 .chipinput{width:96px;padding:6px 12px;border-radius:99px;border:1.5px solid var(--accent);background:var(--bg);outline:0;font-size:16px}
 .row2{display:flex;gap:8px}
 .field{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;outline:0}
@@ -116,28 +120,29 @@ body.settings-open .actionbar{display:none}
 body.confirming .dim{display:block}
 .confirm{position:fixed;left:0;right:0;top:env(safe-area-inset-top);bottom:calc(var(--kb) + var(--bar));z-index:25;display:none;padding:16px;align-items:center;justify-content:center}
 body.confirming .confirm{display:flex}
-.confirm .in{width:100%;max-width:440px;margin:0 auto;background:var(--card);border-radius:18px;padding:16px 18px;max-height:100%;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.15)}
-.confirm .one{text-align:center;padding:6px 0 2px}
-.confirm .one .a{font-size:36px;font-weight:650}
-.confirm .one .c{display:inline-flex;align-items:center;gap:6px;font-size:15px;margin-top:4px}
-.confirm .one .c i{width:8px;height:8px;border-radius:50%}
-.confirm .meta{font-size:13px;color:var(--muted);margin-top:4px}
-.confirm .after{font-size:13px;color:var(--muted);text-align:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
-.confirm .after b{color:var(--ink)}
-.confirm .after .over{color:var(--danger)}
-.confirm .head{font-size:13px;color:var(--muted);margin-bottom:4px}
-.catbtn{display:inline-flex;align-items:center;gap:5px;padding:3px 8px 3px 9px;border-radius:99px;background:var(--chip);font-size:14px;white-space:nowrap;flex:0 0 auto}
-.catbtn i{width:7px;height:7px;border-radius:50%}
-.catbtn .caret{font-size:10px;color:var(--muted)}
-.confirm .one .c{gap:8px}
-.confirm .one .nt{color:var(--muted)}
-.picker{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:8px 0 4px}
-.confirm .item + .picker{justify-content:flex-start;padding:0 0 8px}
-.picker .chip{padding:5px 11px;font-size:13px}
-.confirm .one .c{max-width:100%;flex-wrap:wrap;justify-content:center;word-break:break-word}
-.confirm .item{align-items:flex-start}
-.confirm .item .dot{margin-top:7px}
-.confirm .item .note,.item.open .note{white-space:normal;overflow:visible;word-break:break-word}
+.confirm .in{width:100%;max-width:440px;margin:0 auto;background:var(--card);border-radius:20px;padding:18px 18px 16px;max-height:100%;box-shadow:0 8px 30px rgba(0,0,0,.15);display:flex;flex-direction:column}
+.confirm .in.list{height:min(440px,100%)}
+.confirm .scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
+.confirm .head{font-size:17px;font-weight:600;color:var(--ink);margin-bottom:6px;flex:0 0 auto}
+.confirm .one{text-align:center;padding:8px 0 4px}
+.confirm .one .a{font-size:44px;font-weight:650;line-height:1.15}
+.confirm .one .eq{font-size:16px;color:var(--muted);margin-top:2px}
+.confirm .one .row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+.confirm .one .nt{font-size:16px;color:var(--muted);overflow-wrap:anywhere}
+.confirm .item{align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
+.confirm .item:last-child{border-bottom:0}
+.confirm .item .note{font-size:16px;white-space:normal;overflow:visible;overflow-wrap:anywhere;padding-top:3px}
+.confirm .item .m{font-size:18px;padding-top:2px}
+.confirm .item .m small{font-size:13px}
+.confirm .item .del{margin-top:2px}
+.confirm .after{font-size:16px;color:var(--ink);text-align:center;margin-top:10px;padding-top:12px;border-top:1px solid var(--line);flex:0 0 auto}
+.confirm .after b{font-weight:650}
+.confirm .after .over{color:var(--danger);font-weight:600}
+/* 类别下拉：外面是好看的小胶囊，里面盖着一个透明的系统下拉框 */
+.catsel{position:relative;display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 11px;border-radius:99px;background:var(--chip);font-size:16px;white-space:nowrap;flex:0 0 auto}
+.catsel i{width:8px;height:8px;border-radius:50%}
+.catsel .caret{font-size:11px;color:var(--muted)}
+.catsel select{position:absolute;inset:0;opacity:0;width:100%;height:100%;font-size:16px;-webkit-appearance:none;appearance:none;cursor:pointer}
 
 .cat{display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:10px;margin:9px 0}
 .cat .n{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -153,6 +158,9 @@ body.confirming .confirm{display:flex}
 .item .d{font-size:12px;color:var(--muted);white-space:nowrap}
 .item .c{font-size:14px;white-space:nowrap}
 #list .item{cursor:pointer}
+.item .more{display:none;font-size:12px;color:var(--accent);font-weight:600;white-space:nowrap;flex:0 0 auto}
+.item.trunc .more{display:inline}
+.item.open .note{white-space:normal;overflow:visible;overflow-wrap:anywhere}
 .item .note{font-size:13px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .item .m{font-size:15px;font-weight:600;text-align:right;white-space:nowrap}
 .item .m small{display:block;font-size:12px;font-weight:400;color:var(--muted);line-height:1.2}
@@ -312,7 +320,7 @@ const DEFAULT_CATS = [
 ];
 const MAX_CATS = 10;
 const WEEK = ['周日','周一','周二','周三','周四','周五','周六'];
-const APP_VERSION = '7';
+const APP_VERSION = '8';
 const AI_MODEL = 'claude-haiku-5-5';
 const BACKUP_EVERY_DAYS = 7;
 
@@ -348,7 +356,7 @@ function fmt(n, code){
   code = code || settings.main;
   const v = Math.abs(n);
   const s = v.toLocaleString('en-US', { minimumFractionDigits: Math.round(v*100) % 100 ? 2 : 0, maximumFractionDigits: 2 });
-  return (n < 0 ? '-' : '') + sym(code) + s;
+  return sym(code) + (n < 0 ? '-' : '') + s;
 }
 function sig(x){ return String(Number(x.toPrecision(4))); }
 function daysSince(t){ const a = new Date(t); a.setHours(0,0,0,0); const b = new Date(); b.setHours(0,0,0,0); return Math.round((b - a) / 86400000); }
@@ -522,17 +530,18 @@ function renderHero(){
     const today = todayStr();
     const todaySpent = sum(entries.filter(e => e.date === today));
     const daysLeft = dim(viewKey) - new Date().getDate() + 1;
-    // 平均可花：今天之前剩下的预算，平均分给本月剩下的天数（含今天），一整天不变
+    // 今天的额度 = 今天之前剩下的预算 ÷ 本月剩下的天数（含今天）；今天还能花 = 额度 − 今天已花
     const allowance = Math.max(0, budget - (spent - todaySpent)) / daysLeft;
+    const canSpend = Math.floor((allowance - todaySpent) * 100) / 100;
     stats =
       '<div class="stats">' +
-        '<div class="stat"><div class="label">平均可花</div><div class="v num">' + fmt(Math.floor(allowance * 100) / 100) + '</div></div>' +
-        '<div class="stat"><div class="label">今天已花</div><div class="v num' + (todaySpent > allowance ? ' neg' : '') + '">' + fmt(todaySpent) + '</div></div>' +
+        '<div class="stat"><div class="label">今天还能花</div><div class="v num' + (canSpend < 0 ? ' neg' : '') + '">' + fmt(canSpend) + '</div></div>' +
+        '<div class="stat"><div class="label">今天已花</div><div class="v num">' + fmt(todaySpent) + '</div></div>' +
       '</div>';
   }
   el.innerHTML =
-    '<div class="label">' + (remaining >= 0 ? (cur ? '本月还剩' : '这个月剩下') : (cur ? '本月超支' : '这个月超支')) + '</div>' +
-    '<div class="big num' + (remaining < 0 ? ' over' : '') + '">' + fmt(Math.abs(remaining)) + '</div>' +
+    '<div class="label">' + (cur ? '本月还剩' : '这个月剩下') + '</div>' +
+    '<div class="big num' + (remaining < 0 ? ' over' : '') + '">' + fmt(remaining) + '</div>' +
     '<div class="spent num"><b>已花 ' + fmt(spent) + '</b><span>/ ' + fmt(budget) + '</span></div>' +
     '<div class="bar"><i style="width:' + (ratio * 100).toFixed(1) + '%;background:' + color + '"></i></div>' +
     stats;
@@ -559,11 +568,11 @@ function renderCurPick(){
 function afterText(extra){
   if (!settings.budget) return '';
   const after = settings.budget - sum(entries) - extra;
-  if (after < 0) return '<span class="over">记下后本月会超支 ' + fmt(-after) + '</span>';
-  let t = '记下后本月还剩 <b>' + fmt(after) + '</b>';
+  if (after < 0) return '还剩 <span class="over">' + fmt(after) + '</span>';
+  let t = '还剩 <b>' + fmt(after) + '</b>';
   if (isCurrentMonth()){
     const daysAfter = dim(viewKey) - new Date().getDate();
-    if (daysAfter > 0) t += '，之后每天大概 <b>' + fmt(Math.floor(after / daysAfter * 100) / 100) + '</b>';
+    if (daysAfter > 0) t += '，每天平均 <b>' + fmt(Math.floor(after / daysAfter * 100) / 100) + '</b>';
   }
   return t;
 }
@@ -580,10 +589,19 @@ function renderPreview(){
   el.innerHTML = parts.join('。');
 }
 
+let chipEdit = false;   // 类别标签是不是在编辑模式
 function renderChips(){
+  if (!chipEdit){
+    $('chips').innerHTML = settings.cats.map(c =>
+      '<button class="chip' + (c.name === selCat ? ' on' : '') + '" data-c="' + esc(c.name) + '"><i style="background:' + c.color + '"></i>' + esc(c.name) + '</button>'
+    ).join('') + '<button class="chip edit" id="editChips">编辑</button>';
+    return;
+  }
   $('chips').innerHTML = settings.cats.map(c =>
-    '<button class="chip' + (c.name === selCat ? ' on' : '') + '" data-c="' + esc(c.name) + '"><i style="background:' + c.color + '"></i>' + esc(c.name) + '</button>'
-  ).join('') + (settings.cats.length < MAX_CATS ? '<button class="chip add" id="addChip" aria-label="添加类别">＋</button>' : '');
+    '<button class="chip" data-del="' + esc(c.name) + '" aria-label="删除 ' + esc(c.name) + '"><i style="background:' + c.color + '"></i>' + esc(c.name) + '<span class="x">×</span></button>'
+  ).join('') +
+  (settings.cats.length < MAX_CATS ? '<button class="chip add" id="addChip" aria-label="添加类别">＋</button>' : '') +
+  '<button class="chip done" id="doneChips">完成</button>';
 }
 // 在标签最后直接添加新类别
 function startAddChip(){
@@ -645,6 +663,7 @@ function itemHtml(e, btn, showDate){
     (showDate ? '<span class="d">' + (e.date === todayStr() ? '今天' : md(e.date)) + '</span>' : '') +
     '<span class="c">' + esc(e.cat) + '</span>' +
     '<span class="note">' + esc(e.note || '') + '</span>' +
+    '<span class="more">展开</span>' +
     '<span class="m num">' + fmt(mainVal(e)) + orig + '</span>' + btn + '</div>';
 }
 
@@ -659,7 +678,19 @@ function renderList(){
     return '<div class="day"><span>' + label + '</span><span class="num">' + fmt(sum(list)) + '</span></div>' +
       list.map(e => itemHtml(e, '<button class="del" data-id="' + esc(e.id) + '" aria-label="删除">×</button>')).join('');
   }).join('');
+  markTruncated();
 }
+// 备注被截断（显示成 …）的那几条，后面加「展开」
+function markTruncated(){
+  requestAnimationFrame(() => {
+    document.querySelectorAll('#list .item').forEach(it => {
+      const n = it.querySelector('.note');
+      if (!n || it.classList.contains('open')) return;
+      it.classList.toggle('trunc', n.scrollWidth > n.clientWidth + 1);
+    });
+  });
+}
+window.addEventListener('resize', markTruncated);
 
 /* ================= 底部按钮：第一下处理，第二下确认 ================= */
 function mode(){
@@ -688,7 +719,6 @@ function toast(t, err){
 }
 
 function showConfirm(from, list){
-  pickOpen = -1;
   list.forEach(e => { e._orig = e.cat; });   // 记下原来的类别，确认时看你有没有改
   pending = { from, list };
   document.body.classList.add('confirming');
@@ -700,57 +730,52 @@ function closeConfirm(){
   document.body.classList.remove('confirming');
   renderBar();
 }
-let pickOpen = -1;   // 正在改类别的是第几笔
-function catBtn(e, i){
-  return '<button class="catbtn" data-ci="' + i + '"><i style="background:' + colorOf(e.cat) + '"></i>' + esc(e.cat) + '<span class="caret">▾</span></button>';
-}
-function catPicker(e, i){
-  if (pickOpen !== i) return '';
-  return '<div class="picker">' + settings.cats.map(c =>
-    '<button class="chip' + (c.name === e.cat ? ' on' : '') + '" data-pi="' + i + '" data-c="' + esc(c.name) + '"><i style="background:' + c.color + '"></i>' + esc(c.name) + '</button>'
-  ).join('') + '</div>';
+function catSelect(e, i){
+  return '<label class="catsel"><i style="background:' + colorOf(e.cat) + '"></i><span>' + esc(e.cat) + '</span><span class="caret">▾</span>' +
+    '<select data-si="' + i + '" aria-label="改类别">' + settings.cats.map(c =>
+      '<option value="' + esc(c.name) + '"' + (c.name === e.cat ? ' selected' : '') + '>' + esc(c.name) + '</option>').join('') +
+    (settings.cats.some(c => c.name === e.cat) ? '' : '<option selected>' + esc(e.cat) + '</option>') +
+    '</select></label>';
 }
 function renderConfirm(){
-  const body = $('confirmBody');
+  const box = $('confirmBody');
   const list = pending.list;
   const total = list.reduce((s, e) => s + e.base, 0);
   const inView = list.filter(e => e.date.slice(0,7) === viewKey).reduce((s, e) => s + e.base, 0);
-  let html;
-  if (list.length === 1){
-    const e = list[0], cur = curOf(e);
-    html = '<div class="one">' +
-      '<div class="a num">' + fmt(e.amt, cur) + '</div>' +
-      (cur !== settings.main ? '<div class="meta num">≈ ' + fmt(e.base) + '</div>' : '') +
-      '<div class="c">' + catBtn(e, 0) + (e.note ? '<span class="nt">' + esc(e.note) + '</span>' : '') + '</div>' +
-      (e.date !== todayStr() ? '<div class="meta">' + md(e.date) + '</div>' : '') +
-      catPicker(e, 0) +
-      '</div>';
-  } else {
-    html = '<div class="head num">' + list.length + ' 笔，合计 ' + fmt(total) + '</div>' +
-      list.map((e, i) => {
-        const cur = curOf(e);
-        const orig = cur !== settings.main ? '<small>(' + esc(fmt(e.amt, cur)) + ')</small>' : '';
-        return '<div class="item">' +
-          '<span class="d">' + (e.date === todayStr() ? '今天' : md(e.date)) + '</span>' +
-          catBtn(e, i) +
-          '<span class="note">' + esc(e.note || '') + '</span>' +
-          '<span class="m num">' + fmt(mainVal(e)) + orig + '</span>' +
-          '<button class="del" data-i="' + i + '" aria-label="去掉">×</button></div>' + catPicker(e, i);
-      }).join('');
-  }
   const a = afterText(inView);
-  if (a) html += '<div class="after">' + a + '</div>';
-  body.innerHTML = html;
+  const after = a ? '<div class="after">' + a + '</div>' : '';
+  if (pending.from === 'manual'){
+    // 手动记的：一个大数字
+    const e = list[0], cur = curOf(e);
+    box.className = 'in';
+    box.innerHTML = '<div class="one">' +
+      '<div class="a num">' + fmt(e.amt, cur) + '</div>' +
+      (cur !== settings.main ? '<div class="eq num">≈ ' + fmt(e.base) + '</div>' : '') +
+      '<div class="row">' + catSelect(e, 0) + (e.note ? '<span class="nt">' + esc(e.note) + '</span>' : '') + '</div>' +
+      '</div>' + after;
+    return;
+  }
+  // AI 拆的：永远是列表，弹窗高度固定，笔数多了在里面滑
+  box.className = 'in list';
+  box.innerHTML = '<div class="head num">' + list.length + ' 笔，合计 ' + fmt(total) + '</div>' +
+    '<div class="scroll">' + list.map((e, i) => {
+      const cur = curOf(e);
+      const orig = cur !== settings.main ? '<small>(' + esc(fmt(e.amt, cur)) + ')</small>' : '';
+      return '<div class="item">' + catSelect(e, i) +
+        '<span class="note">' + esc(e.note || '') + '</span>' +
+        '<span class="m num">' + fmt(mainVal(e)) + orig + '</span>' +
+        '<button class="del" data-i="' + i + '" aria-label="去掉">×</button></div>';
+    }).join('') + '</div>' + after;
 }
+$('confirmBody').addEventListener('change', e => {
+  const sel = e.target.closest('select[data-si]'); if (!sel || !pending) return;
+  pending.list[Number(sel.dataset.si)].cat = sel.value;
+  renderConfirm();
+});
 $('confirmBody').addEventListener('click', e => {
   if (!pending) return;
-  const cb = e.target.closest('button[data-ci]');
-  if (cb){ const i = Number(cb.dataset.ci); pickOpen = pickOpen === i ? -1 : i; renderConfirm(); return; }
-  const pb = e.target.closest('button[data-pi]');
-  if (pb){ pending.list[Number(pb.dataset.pi)].cat = pb.dataset.c; pickOpen = -1; renderConfirm(); return; }
   const b = e.target.closest('button[data-i]'); if (!b) return;
   pending.list.splice(Number(b.dataset.i), 1);
-  pickOpen = -1;
   if (!pending.list.length){ closeConfirm(); return; }
   renderConfirm(); renderBar();
 });
@@ -805,7 +830,16 @@ $('backMain').onclick = () => { selCur = settings.main; renderCurPick(); renderP
 $('curPick').onclick = e => { const b = e.target.closest('button'); if (!b) return; selCur = b.dataset.c; lastInput = 'manual'; renderCurPick(); renderPreview(); renderWarns(); renderBar(); };
 $('chips').onclick = e => {
   const b = e.target.closest('.chip'); if (!b) return;
+  if (b.id === 'editChips'){ chipEdit = true; renderChips(); return; }
+  if (b.id === 'doneChips'){ chipEdit = false; renderChips(); return; }
   if (b.id === 'addChip'){ startAddChip(); return; }
+  if (b.dataset.del){
+    if (settings.cats.length <= 1){ toast('至少要留一个类别', true); return; }
+    settings.cats = settings.cats.filter(c => c.name !== b.dataset.del);
+    saveSettings();
+    if (selCat === b.dataset.del) selCat = settings.cats[0].name;
+    renderChips(); return;
+  }
   selCat = b.dataset.c; lastInput = 'manual'; renderChips(); renderBar();
 };
 $('prev').onclick = () => openMonth(shiftMonth(viewKey, -1));
@@ -813,7 +847,14 @@ $('next').onclick = () => openMonth(shiftMonth(viewKey, 1));
 
 $('list').onclick = e => {
   const b = e.target.closest('.del');
-  if (!b){ const it = e.target.closest('.item'); if (it) it.classList.toggle('open'); return; }
+  if (!b){
+    const it = e.target.closest('.item');
+    if (it && (it.classList.contains('trunc') || it.classList.contains('open'))){
+      const open = it.classList.toggle('open');
+      const m = it.querySelector('.more'); if (m) m.textContent = open ? '收起' : '展开';
+    }
+    return;
+  }
   if (!b.classList.contains('arm')){
     document.querySelectorAll('#list .del.arm').forEach(x => { x.classList.remove('arm'); x.textContent = '×'; });
     b.classList.add('arm'); b.textContent = '删除';
