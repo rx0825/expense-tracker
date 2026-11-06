@@ -173,20 +173,19 @@ body.confirming .confirm{display:flex}
 #list > .wk:first-child{margin-top:0}
 .wk .r{display:flex;align-items:center;gap:8px}
 .wk .car{width:28px;text-align:center;font-size:var(--t6);color:var(--muted);font-weight:400}
-.wkbody{display:none;padding-bottom:8px}
+.wkbody{display:none;padding:8px 0}
 .wkbody.open{display:block}
 /* 明细的每一笔：点一下展开，显示完整备注和日期 */
-.li{display:grid;grid-template-columns:8px var(--cw,max-content) minmax(0,1fr) max-content 28px;column-gap:8px;align-items:start;padding:8px 0;cursor:pointer}
+.li{display:grid;grid-template-columns:8px max-content minmax(0,1fr) max-content 28px;column-gap:8px;align-items:start;padding:8px 0;cursor:pointer}
 .li .dot{grid-row:1;margin-top:8px}
 .li .c,.li .note{grid-row:1}
 .li .del{grid-column:5;grid-row:1}
 .li .del{margin:-2px 0}
 .li .c{white-space:nowrap}
-.li .note{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:var(--nw,none)}
+.li .note{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .li .m{grid-column:4;grid-row:1 / span 2;font-weight:600;text-align:right;white-space:nowrap}   /* 外币原金额往下伸，不撑高备注那一行 */
-.li.fx .m{grid-row:1}   /* 有外币小字时，日期放到小字下面 */
 .li .m small{display:block;font-size:var(--t6);font-weight:400;color:var(--muted);line-height:1.2}
-.li .det{grid-column:3 / 4;grid-row:2;justify-self:start;width:var(--nw,100%);font-size:var(--t5);color:var(--muted);text-align:right;white-space:nowrap;margin-top:8px;display:none}
+.li .det{grid-column:2 / 4;grid-row:2;font-size:var(--t5);color:var(--muted);white-space:nowrap;margin-top:8px;display:none}
 .li.open .note{white-space:normal;overflow:visible;overflow-wrap:anywhere}
 .li.open .det{display:block}
 .dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
@@ -347,7 +346,7 @@ const DEFAULT_CATS = [
 ];
 const MAX_CATS = 10;
 const WEEK = ['周日','周一','周二','周三','周四','周五','周六'];
-const APP_VERSION = '14';
+const APP_VERSION = '15';
 const AI_MODEL = 'claude-haiku-5-5';
 const BACKUP_EVERY_DAYS = 7;
 // 「钱花在了哪」和明细的范围，从长到短
@@ -729,27 +728,13 @@ function renderBreakdown(list){
 function itemHtml(e){
   const cur = curOf(e);
   const orig = cur !== settings.main ? '<small>' + esc(fmt(e.amt, cur)) + '</small>' : '';
-  return '<div class="li' + (orig ? ' fx' : '') + '"><span class="dot" style="background:' + colorOf(e.cat) + '"></span>' +
+  return '<div class="li"><span class="dot" style="background:' + colorOf(e.cat) + '"></span>' +
     '<span class="c">' + esc(e.cat) + '</span>' +
     '<span class="note">' + esc(e.note || '') + '</span>' +
     '<span class="m num">' + fmt(mainVal(e)) + orig + '</span>' +
     '<button class="del" data-id="' + esc(e.id) + '" aria-label="删除">×</button>' +
-    '<span class="det num">—— ' + mdNum(e.date) + '</span></div>';
+    '<span class="det">' + md(e.date) + ' ' + WEEK[new Date(e.date + 'T00:00:00').getDay()] + '</span></div>';
 }
-// 备注的右边界：所有行用同一条竖线，日期的末尾都落在这条线上。
-// 线的位置取「每行都够得着」的最靠左那个，再往左调到正好放下整数个字，长备注折行时每行正好写到线上。
-function layoutList(){
-  const list = $('list');
-  list.style.removeProperty('--cw'); list.style.removeProperty('--nw');
-  const rows = [...list.querySelectorAll('.li')].filter(r => r.offsetParent);
-  if (!rows.length) return;
-  const cw = Math.max(...rows.map(r => r.querySelector('.c').getBoundingClientRect().width));
-  list.style.setProperty('--cw', Math.ceil(cw) + 'px');
-  const w = Math.min(...rows.map(r => r.querySelector('.note').getBoundingClientRect().width));
-  const fs = parseFloat(getComputedStyle(rows[0].querySelector('.note')).fontSize);
-  list.style.setProperty('--nw', Math.floor(w / fs) * fs + 'px');
-}
-window.addEventListener('resize', layoutList);
 const byNewest = (a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : b.t - a.t);
 // 周标题：11/2 – 11/8（只算这个月里的那几天）
 const mdNum = d => Number(d.slice(5, 7)) + '/' + Number(d.slice(8));
@@ -777,7 +762,6 @@ function renderList(all){
         '<div class="wkbody' + (open ? ' open' : '') + '">' + weeks[w].map(itemHtml).join('') + '</div>';
     }).join('');
   }
-  layoutList();
 }
 
 
