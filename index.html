@@ -177,7 +177,7 @@ body.confirming .confirm{display:flex}
 .wkbody .li:first-child{border-top:1px solid var(--line);padding-top:12px}   /* 周总价和下面的细项之间一条线：离周总价近（4），离细项远（12） */
 .wkbody.open{display:block}
 /* 明细的每一笔：点一下展开，显示完整备注和日期 */
-.li{display:grid;grid-template-columns:8px max-content minmax(0,1fr) max-content 28px;column-gap:8px;align-items:start;padding:8px 0;cursor:pointer}
+.li{display:grid;grid-template-columns:8px max-content minmax(0,1fr) max-content minmax(28px,max-content);column-gap:8px;align-items:start;padding:8px 0;cursor:pointer}
 .li .dot{grid-row:1;margin-top:8px}
 .li .c,.li .note{grid-row:1;align-self:baseline}   /* 类别和备注字号不同，按文字底线对齐 */
 .li .del{grid-column:5;grid-row:1}
@@ -728,13 +728,13 @@ function renderBreakdown(list){
 // 明细里的一笔：平时一行；点一下展开，显示完整备注和日期
 function itemHtml(e){
   const cur = curOf(e);
-  const orig = cur !== settings.main ? ' · ' + esc(fmt(e.amt, cur)) : '';   // 外币原金额：平时不显示，点开时写在日期后面
+  const orig = cur !== settings.main ? '<small>(' + esc(fmt(e.amt, cur)) + ')</small>' : '';   // 外币原金额，写在金额正下方
   return '<div class="li"><span class="dot" style="background:' + colorOf(e.cat) + '"></span>' +
     '<span class="c">' + esc(e.cat) + '</span>' +
     '<span class="note">' + esc(e.note || '') + '</span>' +
-    '<span class="m num">' + fmt(mainVal(e)) + '</span>' +
+    '<span class="m num">' + fmt(mainVal(e)) + orig + '</span>' +
     '<button class="del" data-id="' + esc(e.id) + '" aria-label="删除">×</button>' +
-    '<span class="det">' + md(e.date) + ' ' + WEEK[new Date(e.date + 'T00:00:00').getDay()] + orig + '</span></div>';
+    '<span class="det">' + md(e.date) + ' ' + WEEK[new Date(e.date + 'T00:00:00').getDay()] + '</span></div>';
 }
 const byNewest = (a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : b.t - a.t);
 // 周标题：11/2 – 11/8（只算这个月里的那几天）
