@@ -173,7 +173,8 @@ body.confirming .confirm{display:flex}
 #list > .wk:first-child{margin-top:0}
 .wk .r{display:flex;align-items:center;gap:8px}
 .wk .car{width:28px;text-align:center;font-size:var(--t6);color:var(--muted);font-weight:400}
-.wkbody{display:none;padding:8px 0}
+.wkbody{display:none;padding:12px 0 8px}
+.wkbody .li:first-child{border-top:1px solid var(--line);padding-top:12px}   /* 周总价和下面的细项之间一条线，上下各隔 12 */
 .wkbody.open{display:block}
 /* 明细的每一笔：点一下展开，显示完整备注和日期 */
 .li{display:grid;grid-template-columns:8px max-content minmax(0,1fr) max-content 28px;column-gap:8px;align-items:start;padding:8px 0;cursor:pointer}
