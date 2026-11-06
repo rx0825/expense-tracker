@@ -186,7 +186,7 @@ body.confirming .confirm{display:flex}
 .li .note{font-size:var(--t5);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .li .m{grid-column:4;grid-row:1 / span 2;font-weight:600;text-align:right;white-space:nowrap}   /* 外币原金额往下伸，不撑高备注那一行 */
 .li .m small{display:block;font-size:var(--t6);font-weight:400;color:var(--muted);line-height:1.2}
-.li .det{grid-column:3 / 4;grid-row:2;font-size:var(--t5);color:var(--muted);white-space:nowrap;margin-top:8px;display:none}
+.li .det{grid-column:3 / 4;grid-row:2;font-size:var(--t5);color:var(--muted);white-space:nowrap;margin-top:12px;display:none}
 .li.open .note{white-space:normal;overflow:visible;overflow-wrap:anywhere}
 .li.open .det{display:block}
 .dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
@@ -347,7 +347,7 @@ const DEFAULT_CATS = [
 ];
 const MAX_CATS = 10;
 const WEEK = ['周日','周一','周二','周三','周四','周五','周六'];
-const APP_VERSION = '15';
+const APP_VERSION = '16';
 const AI_MODEL = 'claude-haiku-5-5';
 const BACKUP_EVERY_DAYS = 7;
 // 「钱花在了哪」和明细的范围，从长到短
@@ -728,13 +728,13 @@ function renderBreakdown(list){
 // 明细里的一笔：平时一行；点一下展开，显示完整备注和日期
 function itemHtml(e){
   const cur = curOf(e);
-  const orig = cur !== settings.main ? '<small>' + esc(fmt(e.amt, cur)) + '</small>' : '';
+  const orig = cur !== settings.main ? ' · ' + esc(fmt(e.amt, cur)) : '';   // 外币原金额：平时不显示，点开时写在日期后面
   return '<div class="li"><span class="dot" style="background:' + colorOf(e.cat) + '"></span>' +
     '<span class="c">' + esc(e.cat) + '</span>' +
     '<span class="note">' + esc(e.note || '') + '</span>' +
-    '<span class="m num">' + fmt(mainVal(e)) + orig + '</span>' +
+    '<span class="m num">' + fmt(mainVal(e)) + '</span>' +
     '<button class="del" data-id="' + esc(e.id) + '" aria-label="删除">×</button>' +
-    '<span class="det">' + md(e.date) + ' ' + WEEK[new Date(e.date + 'T00:00:00').getDay()] + '</span></div>';
+    '<span class="det">' + md(e.date) + ' ' + WEEK[new Date(e.date + 'T00:00:00').getDay()] + orig + '</span></div>';
 }
 const byNewest = (a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : b.t - a.t);
 // 周标题：11/2 – 11/8（只算这个月里的那几天）

@@ -1,5 +1,5 @@
 // 离线缓存：先用手机里存好的页面（秒开），同时在后台检查有没有新版本，下次打开生效。
-const CACHE = 'jizhang-v15';
+const CACHE = 'jizhang-v16';
 const ASSETS = ['./', './index.html', './manifest.json', './apple-touch-icon.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
