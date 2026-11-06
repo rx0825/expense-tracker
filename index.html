@@ -177,7 +177,7 @@ body.confirming .confirm{display:flex}
 .wkbody .li:first-child{border-top:1px solid var(--line);padding-top:12px}   /* 周总价和下面的细项之间一条线：离周总价近（4），离细项远（12） */
 .wkbody.open{display:block}
 /* 明细的每一笔：点一下展开，显示完整备注和日期 */
-.li{display:grid;grid-template-columns:8px max-content minmax(0,1fr) max-content minmax(28px,max-content);column-gap:8px;align-items:start;padding:8px 0;cursor:pointer}
+.li{display:grid;grid-template-columns:8px max-content minmax(0,1fr) max-content 28px;column-gap:8px;align-items:start;padding:8px 0;cursor:pointer}
 .li .dot{grid-row:1;margin-top:8px}
 .li .c,.li .note{grid-row:1;align-self:baseline}   /* 类别和备注字号不同，按文字底线对齐 */
 .li .del{grid-column:5;grid-row:1}
@@ -191,8 +191,8 @@ body.confirming .confirm{display:flex}
 .li.open .det{display:block}
 .dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
 .del{font-size:var(--t4);color:var(--muted);width:28px;height:28px;border-radius:8px;flex:0 0 auto}
-.del.arm{width:auto;padding:0 12px;background:var(--danger-soft);color:var(--danger);font-weight:600;font-size:var(--t5)}
-.li .del.arm{justify-self:end}
+/* 点了一下 × 以后：同样大小的浅红底 + 红色垃圾桶，再点一下才删除 */
+.del.arm{color:var(--danger);background:var(--danger-soft);display:inline-flex;align-items:center;justify-content:center}
 .empty{color:var(--muted);font-size:var(--t5);text-align:center;padding:16px 0 8px}
 
 /* 设置 */
@@ -942,6 +942,7 @@ $('rangePick').onclick = e => {
   renderRangeCard();
 };
 // 点了 × 变成「删除」后，碰屏幕其他任何地方就取消
+const TRASH_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="删除"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>';
 function disarmDel(){ document.querySelectorAll('#list .del.arm').forEach(x => { x.classList.remove('arm'); x.textContent = '×'; }); }
 document.addEventListener('pointerdown', e => { if (!e.target.closest('#list .del.arm')) disarmDel(); }, true);
 
@@ -960,7 +961,7 @@ $('list').onclick = e => {
   }
   if (!b.classList.contains('arm')){
     disarmDel();
-    b.classList.add('arm'); b.textContent = '删除';
+    b.classList.add('arm'); b.innerHTML = TRASH_ICON;
     setTimeout(() => { if (b.isConnected){ b.classList.remove('arm'); b.textContent = '×'; } }, 3000);
     return;
   }
