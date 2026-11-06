@@ -168,8 +168,9 @@ body.confirming .confirm{display:flex}
 .cat .track i{display:block;height:100%;border-radius:99px}
 .cat .a{font-size:var(--t4);text-align:right}
 #breakPart{margin-bottom:24px}
-.wk{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);font-size:var(--t4);font-weight:600;cursor:pointer}
-#list > .wk:first-child{border-top:0;padding-top:0}
+/* 周标题：整行浅色圆角底，左右各伸出 12，里面的内容和下面每一笔对齐 */
+.wk{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:8px -12px 0;padding:8px 12px;border-radius:12px;background:var(--chip);font-size:var(--t4);font-weight:600;cursor:pointer}
+#list > .wk:first-child{margin-top:0}
 .wk .r{display:flex;align-items:center;gap:8px}
 .wk .car{width:28px;text-align:center;font-size:var(--t6);color:var(--muted);font-weight:400}
 .wkbody{display:none;padding-bottom:8px}
