@@ -178,14 +178,14 @@ body.confirming .confirm{display:flex}
 /* 明细的每一笔：点一下展开，显示完整备注和日期 */
 .li{display:grid;grid-template-columns:8px max-content minmax(0,1fr) max-content 28px;column-gap:8px;align-items:start;padding:8px 0;cursor:pointer}
 .li .dot{grid-row:1;margin-top:8px}
-.li .c,.li .note{grid-row:1}
+.li .c,.li .note{grid-row:1;align-self:baseline}   /* 类别和备注字号不同，按文字底线对齐 */
 .li .del{grid-column:5;grid-row:1}
 .li .del{margin:-2px 0}
 .li .c{white-space:nowrap}
-.li .note{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li .note{font-size:var(--t5);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .li .m{grid-column:4;grid-row:1 / span 2;font-weight:600;text-align:right;white-space:nowrap}   /* 外币原金额往下伸，不撑高备注那一行 */
 .li .m small{display:block;font-size:var(--t6);font-weight:400;color:var(--muted);line-height:1.2}
-.li .det{grid-column:2 / 4;grid-row:2;font-size:var(--t5);color:var(--muted);white-space:nowrap;margin-top:8px;display:none}
+.li .det{grid-column:3 / 4;grid-row:2;font-size:var(--t5);color:var(--muted);white-space:nowrap;margin-top:8px;display:none}
 .li.open .note{white-space:normal;overflow:visible;overflow-wrap:anywhere}
 .li.open .det{display:block}
 .dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
