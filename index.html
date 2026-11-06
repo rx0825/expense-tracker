@@ -172,10 +172,13 @@ body.confirming .confirm{display:flex}
 #list > .wk:first-child{border-top:0;padding-top:0}
 .wk .r{display:flex;align-items:center;gap:8px}
 .wk .car{width:12px;text-align:center;font-size:var(--t6);color:var(--muted);font-weight:400}
-.wkbody{display:none;padding-bottom:8px}
-.wkbody.open{display:block}
+.wk{grid-column:1 / -1}
+.wkbody{grid-column:1 / -1;display:none;padding-bottom:8px}
+.wkbody.open{display:grid;grid-template-columns:subgrid}
 /* 明细的每一笔：点一下展开，显示完整备注和日期 */
-.li{display:grid;grid-template-columns:8px max-content minmax(0,1fr) max-content 28px;column-gap:8px;align-items:start;padding:8px 0;cursor:pointer}
+/* 所有行共用同样的列宽：备注的开头、日期、金额在每一行都对齐 */
+#list{display:grid;grid-template-columns:8px max-content minmax(0,1fr) max-content 28px;column-gap:8px}
+.li{grid-column:1 / -1;display:grid;grid-template-columns:subgrid;align-items:start;padding:8px 0;cursor:pointer}
 .li .dot{grid-row:1;margin-top:8px}
 .li .del{margin-top:-2px}
 .li .c{white-space:nowrap}
@@ -183,7 +186,7 @@ body.confirming .confirm{display:flex}
 .li .m{font-weight:600;text-align:right;white-space:nowrap}
 .li .m small{display:block;font-size:var(--t6);font-weight:400;color:var(--muted);line-height:1.2}
 .li .det{grid-column:3 / 4;font-size:var(--t5);color:var(--muted);text-align:right;white-space:nowrap;margin-top:4px;display:none}
-.li.open .note{white-space:normal;overflow:visible;overflow-wrap:anywhere}
+.li.open .note{white-space:normal;overflow:visible;overflow-wrap:anywhere;text-align:justify}
 .li.open .det{display:block}
 .dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
 .del{font-size:var(--t4);color:var(--muted);width:28px;height:28px;border-radius:8px;flex:0 0 auto}
@@ -730,22 +733,8 @@ function itemHtml(e){
     '<span class="note">' + esc(e.note || '') + '</span>' +
     '<span class="m num">' + fmt(mainVal(e)) + orig + '</span>' +
     '<button class="del" data-id="' + esc(e.id) + '" aria-label="删除">×</button>' +
-    '<span class="det num"><span>—— ' + mdNum(e.date) + '</span></span></div>';
+    '<span class="det num">—— ' + mdNum(e.date) + '</span></div>';
 }
-// 日期靠右对齐到备注实际最长那一行的末尾（中文折行时，每行右边会空出一点）
-function alignDate(it){
-  const n = it.querySelector('.note'), d = it.querySelector('.det'), t = d.firstChild;
-  d.style.paddingRight = '0px';
-  let right = 0;
-  if (n.textContent){
-    const r = document.createRange(); r.selectNodeContents(n);
-    for (const rc of r.getClientRects()) right = Math.max(right, rc.right);
-  }
-  const box = n.getBoundingClientRect();
-  const gap = right ? box.right - right : box.width;          // 没有备注就靠左
-  d.style.paddingRight = Math.max(0, Math.min(gap, box.width - t.offsetWidth)) + 'px';
-}
-window.addEventListener('resize', () => document.querySelectorAll('#list .li.open').forEach(alignDate));
 const byNewest = (a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : b.t - a.t);
 // 周标题：11/2 – 11/8（只算这个月里的那几天）
 const mdNum = d => Number(d.slice(5, 7)) + '/' + Number(d.slice(8));
@@ -965,7 +954,7 @@ $('list').onclick = e => {
   const b = e.target.closest('.del');
   if (!b){
     const it = e.target.closest('.li');
-    if (it && it.classList.toggle('open')) alignDate(it);
+    if (it) it.classList.toggle('open');
     return;
   }
   if (!b.classList.contains('arm')){
