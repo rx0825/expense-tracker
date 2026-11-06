@@ -183,6 +183,7 @@ body.confirming .confirm{display:flex}
 .li .c{white-space:nowrap}
 .li .note{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:var(--nw,none)}
 .li .m{grid-column:4;grid-row:1 / span 2;font-weight:600;text-align:right;white-space:nowrap}   /* 外币原金额往下伸，不撑高备注那一行 */
+.li.fx .m{grid-row:1}   /* 有外币小字时，日期放到小字下面 */
 .li .m small{display:block;font-size:var(--t6);font-weight:400;color:var(--muted);line-height:1.2}
 .li .det{grid-column:3 / 4;grid-row:2;justify-self:start;width:var(--nw,100%);font-size:var(--t5);color:var(--muted);text-align:right;white-space:nowrap;margin-top:8px;display:none}
 .li.open .note{white-space:normal;overflow:visible;overflow-wrap:anywhere}
@@ -727,7 +728,7 @@ function renderBreakdown(list){
 function itemHtml(e){
   const cur = curOf(e);
   const orig = cur !== settings.main ? '<small>' + esc(fmt(e.amt, cur)) + '</small>' : '';
-  return '<div class="li"><span class="dot" style="background:' + colorOf(e.cat) + '"></span>' +
+  return '<div class="li' + (orig ? ' fx' : '') + '"><span class="dot" style="background:' + colorOf(e.cat) + '"></span>' +
     '<span class="c">' + esc(e.cat) + '</span>' +
     '<span class="note">' + esc(e.note || '') + '</span>' +
     '<span class="m num">' + fmt(mainVal(e)) + orig + '</span>' +
