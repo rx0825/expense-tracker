@@ -93,13 +93,13 @@ input,select,textarea{font:inherit;color:var(--ink);font-size:var(--t4)}
 .preview b{color:var(--ink);font-weight:600}
 .preview .over{color:var(--danger)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
-.chip{padding:8px 16px;border-radius:99px;background:var(--chip);font-size:var(--t4);line-height:1.25;display:inline-flex;align-items:center;gap:8px}
+.chip{padding:8px 16px;border-radius:99px;background:var(--chip);font-size:var(--t5);line-height:1.25;display:inline-flex;align-items:center;gap:8px}
 .chip i{width:8px;height:8px;border-radius:50%}
 .chip.on{background:var(--ink);color:var(--card)}
 .chip.add,.chip.edit{color:var(--muted)}
 .chip.done{background:var(--accent);color:#fff}
 .chip .x{margin-left:4px;color:var(--danger);font-weight:600}
-.chipinput{width:96px;padding:8px 12px;border-radius:99px;border:1.5px solid var(--accent);background:var(--bg);outline:0;font-size:var(--t4);line-height:1.25}
+.chipinput{width:96px;padding:8px 12px;border-radius:99px;border:1.5px solid var(--accent);background:var(--bg);outline:0;font-size:var(--t4);line-height:1.25;height:34px}
 .row2{display:flex;gap:8px}
 .field{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:12px;outline:0}
 .field:focus{border-color:var(--accent)}
@@ -182,7 +182,7 @@ body.confirming .confirm{display:flex}
 .li .note{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .li .m{font-weight:600;text-align:right;white-space:nowrap}
 .li .m small{display:block;font-size:var(--t6);font-weight:400;color:var(--muted);line-height:1.2}
-.li .det{grid-column:2 / 4;font-size:var(--t5);color:var(--muted);margin-top:4px;display:none}
+.li .det{grid-column:3 / 4;font-size:var(--t5);color:var(--muted);text-align:right;margin-top:4px;display:none}
 .li.open .note{white-space:normal;overflow:visible;overflow-wrap:anywhere}
 .li.open .det{display:block}
 .dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
@@ -725,13 +725,12 @@ function renderBreakdown(list){
 function itemHtml(e){
   const cur = curOf(e);
   const orig = cur !== settings.main ? '<small>' + esc(fmt(e.amt, cur)) + '</small>' : '';
-  const date = md(e.date) + ' ' + WEEK[new Date(e.date + 'T00:00:00').getDay()];
   return '<div class="li"><span class="dot" style="background:' + colorOf(e.cat) + '"></span>' +
     '<span class="c">' + esc(e.cat) + '</span>' +
     '<span class="note">' + esc(e.note || '') + '</span>' +
     '<span class="m num">' + fmt(mainVal(e)) + orig + '</span>' +
     '<button class="del" data-id="' + esc(e.id) + '" aria-label="删除">×</button>' +
-    '<span class="det">' + date + '</span></div>';
+    '<span class="det num">—— ' + mdNum(e.date) + '</span></div>';
 }
 const byNewest = (a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : b.t - a.t);
 // 周标题：11/2 – 11/8（只算这个月里的那几天）
